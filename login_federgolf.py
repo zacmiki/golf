@@ -5,6 +5,7 @@ import streamlit as st
 #Login and call the function to extract data
 def login(username, password):
     import requests
+    import pandas as pd
     
     global global_df # < ---------------------------------------------
 
@@ -141,6 +142,7 @@ def login(username, password):
 
 # Exracat data in the corect format
 def extract_data(content):
+    import pandas as pd
     ####  --------- EXTRACTING THE DATA AND PLACING THEM IN A PANDA DATAFRAME
     soup = BeautifulSoup(content, "html.parser")
     table = soup.find("table", class_="entity-list-view w-100")
