@@ -20,26 +20,6 @@ def display_login_form():
     return username, password, submit_button
 
 
-# Define a function to display the handicap visualizer
-def display_handicap_visualizer(df):
-    st.subheader("Handicap Visualizer")
-    st.write(
-        "Welcome to the Handicap Visualizer app. Here you can visualize your handicap data."
-    )
-
-    current_handicap = df["Index Nuovo"][0]
-    best_handicap = df["Index Nuovo"].min()
-
-    #st.write(f"Your current handicap is: {current_handicap}")
-    #st.write(f"Your best handicap is: {best_handicap}")
-    st.title(f"Your current handicap is: {current_handicap}")
-    st.title(f"Your best handicap is: {best_handicap}")
-    
-    plot_last_20(df)
-
-    st.write(st.write(st.session_state.df))
-#------------------------------------------------
-
 # Main app logic
 def main():        
     # Check if the user has selected an option from the sidebar
@@ -57,7 +37,7 @@ def main():
             if login_attempt:
                 st.write("Login successful!")
                 
-                display_handicap_visualizer(df)
+                fig_companion(df)
                 # If his is correct I want to get into the Handicap visualizer option and use the df that I found
 
             else:
