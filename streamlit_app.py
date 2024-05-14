@@ -30,7 +30,7 @@ def handle_logout():
 
 # Main app logic
 def main():
-    selected_option = st.sidebar.radio(
+    selected_option = st.sidebar.selectbox(
         "Select an option",
         [
             "Handicap Visualizer",
