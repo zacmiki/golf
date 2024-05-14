@@ -7,7 +7,6 @@ from login_federgolf import login
 # Set up the sidebar
 st.sidebar.title("Your FederGolf Companion")
 st.sidebar.write("Please select an option from the sidebar.")
-st.sidebar.write("START BY RETRIEVING YOUR GOLF HISTORY ")
 
 
 # Define a function to display the login form
@@ -20,19 +19,27 @@ def display_login_form():
     return username, password, submit_button
 
 
+# Define a function to handle logout
+def handle_logout():
+    st.sidebar.write("---")
+    logout_button = st.sidebar.button("Logout")
+    if logout_button:
+        st.session_state.pop("df", None)
+        st.experimental_rerun()
+
+
 # Main app logic
 def main():
-    # Check if the user has selected an option from the sidebar
     selected_option = st.sidebar.radio(
         "Select an option",
         [
-            "Retrieve FederGolf Data",
             "Handicap Visualizer",
             "New HCP Calculator (In Progress)",
         ],
     )
 
-    if selected_option == "Retrieve FederGolf Data":
+    # Check if the user has already logged in
+    if "df" not in st.session_state:
         username, password, submit_button = display_login_form()
         login_attempt = False
 
@@ -40,19 +47,23 @@ def main():
             login_attempt, df = login(username, password)
 
             if login_attempt:
-                # st.write("Login successful!")
-
-                fig_companion(df)
-                # If his is correct I want to get into the Handicap visualizer option and use the df that I found
-
+                st.session_state["df"] = df
+                st.experimental_rerun()
             else:
                 st.write(
                     "Please enter both username and password. Something went wrong."
                 )
+    else:
+        if selected_option == "Handicap Visualizer":
+            # User has already logged in, display the handicap visualizer
+            fig_companion(st.session_state.df)
 
-    elif selected_option == "Handicap Visualizer":
-        # Assuming you have already logged in and have the necessary data
-        fig_companion(st.session_state.df)
+            # Add a logout button in the sidebar
+            handle_logout()
+
+        else:
+            # Need to implement this
+            pass
 
 
 # Define a function to plot the last result
