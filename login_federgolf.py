@@ -1,9 +1,10 @@
 import streamlit as st
 
-#Login and call the function to extract data
+
+# Login and call the function to extract data
 def login(username, password):
-    import requests
     import pandas as pd
+    import requests
     from bs4 import BeautifulSoup
 
     success = False
@@ -141,7 +142,7 @@ def login(username, password):
 def extract_data(content):
     import pandas as pd
     from bs4 import BeautifulSoup
-    
+
     ####  --------- EXTRACTING THE DATA AND PLACING THEM IN A PANDA DATAFRAME
     soup = BeautifulSoup(content, "html.parser")
     table = soup.find("table", class_="entity-list-view w-100")
@@ -176,7 +177,9 @@ def extract_data(content):
     df.rename(columns={"Tipo Giocatore Nuovo": "Date_String"}, inplace=True)
     df["Date_String"] = df["Data"]
     df["Data"] = pd.to_datetime(df["Data"], format="%d/%m/%Y")
-    df["Index Nuovo"] = df["Index Nuovo"].astype(float)
+
+    # Need to add a check and make it works anyway if there are missing values
+    df["Index Nuovo"] = pd.to_numeric(df["Index Nuovo"], errors="coerce")
     df["SD"] = pd.to_numeric(df["SD"])
     df["Index Vecchio"] = pd.to_numeric(df["Index Vecchio"])
     df["Variazione"] = pd.to_numeric(df["Variazione"])
@@ -188,7 +191,7 @@ def extract_data(content):
     df["Stbl"] = pd.to_numeric(df["Stbl"], errors="coerce")
     df["Buche"] = pd.to_numeric(df["Buche"])
     df["Numero tessera"] = pd.to_numeric(df["Numero tessera"])
-    
+
     st.session_state.df = df
 
     return df
