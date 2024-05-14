@@ -21,22 +21,27 @@ def display_login_form():
 
 
 # Main app logic
-def main():        
+def main():
     # Check if the user has selected an option from the sidebar
     selected_option = st.sidebar.radio(
-        "Select an option", ["Retrieve FederGolf Data", "Handicap Visualizer", "New HCP Calculator (In Progress)"]
+        "Select an option",
+        [
+            "Retrieve FederGolf Data",
+            "Handicap Visualizer",
+            "New HCP Calculator (In Progress)",
+        ],
     )
 
     if selected_option == "Retrieve FederGolf Data":
         username, password, submit_button = display_login_form()
         login_attempt = False
 
-        if submit_button:            
+        if submit_button:
             login_attempt, df = login(username, password)
-            
+
             if login_attempt:
-                st.write("Login successful!")
-                
+                # st.write("Login successful!")
+
                 fig_companion(df)
                 # If his is correct I want to get into the Handicap visualizer option and use the df that I found
 
@@ -48,6 +53,7 @@ def main():
     elif selected_option == "Handicap Visualizer":
         # Assuming you have already logged in and have the necessary data
         fig_companion(st.session_state.df)
+
 
 # Define a function to plot the last result
 def plot_last_100_results(df):
@@ -66,60 +72,78 @@ def plot_last_100_results(df):
 
     plt.tight_layout()
     st.pyplot(fig)
-    
+
 
 def plot_last_20(df):
-    fig, ax = plt.subplots(figsize = (12,7))   #create a new Figure with fixed Size
+    fig, ax = plt.subplots(figsize=(12, 7))  # create a new Figure with fixed Size
     last_20_results = df.iloc[:20]
-    
-    ax.plot(last_20_results['Date_String'][::-1], last_20_results['Index Nuovo'][::-1], linestyle = '-', marker = 'o')
-    ax.fill_between(last_20_results['Date_String'][::-1], last_20_results['Index Nuovo'][::-1], color='skyblue', alpha=0.5)
-    
-    ax.set_title("EGA Handicap for last 20 Rounds", fontsize = 16)
-    ax.set_ylabel('EGA', fontsize = 16)
-    
-    #Add minor ticks drawn in thin red dotted lines
+
+    ax.plot(
+        last_20_results["Date_String"][::-1],
+        last_20_results["Index Nuovo"][::-1],
+        linestyle="-",
+        marker="o",
+    )
+    ax.fill_between(
+        last_20_results["Date_String"][::-1],
+        last_20_results["Index Nuovo"][::-1],
+        color="skyblue",
+        alpha=0.5,
+    )
+
+    ax.set_title("EGA Handicap for last 20 Rounds", fontsize=16)
+    ax.set_ylabel("EGA", fontsize=16)
+
+    # Add minor ticks drawn in thin red dotted lines
     ax.minorticks_on()
-    ax.grid(which = 'minor', linestyle = ":", linewidth = 0.2, color = 'red')
+    ax.grid(which="minor", linestyle=":", linewidth=0.2, color="red")
     ax.grid(True)
-    
-    ax.tick_params(axis = 'x', rotation = 45)
-    
+
+    ax.tick_params(axis="x", rotation=45)
+
     # Set x-axis ticks and labels every 5 values
-    ax.set_xticks(range(0, len(last_20_results['Date_String'][::-1]), 2))
-    ax.set_xticklabels(last_20_results['Date_String'][::-1].iloc[::2])
-    
-    ax.set_ylim(last_20_results['Index Nuovo'].min() - .2, last_20_results['Index Nuovo'].max() + .2)
-    
+    ax.set_xticks(range(0, len(last_20_results["Date_String"][::-1]), 2))
+    ax.set_xticklabels(last_20_results["Date_String"][::-1].iloc[::2])
+
+    ax.set_ylim(
+        last_20_results["Index Nuovo"].min() - 0.2,
+        last_20_results["Index Nuovo"].max() + 0.2,
+    )
+
     plt.tight_layout()
     st.pyplot(fig)
-    
-    
+
+
 def fig_companion(dff):
     import pandas as pd
+
     df = pd.DataFrame(dff)
-    
+
     st.title("Official FederGolf Results")
     st.write("Hcp Visualizer -  and more services still to come ...")
     st.divider()
 
     current_handicap = df["Index Nuovo"][0]
     best_handicap = df["Index Nuovo"].min()
-    st.subheader(f"Tesserato {df['Tesserato'][0]}") 
-    st.subheader(f"Your Current HCP is: {current_handicap} - Best handicap: {best_handicap}")
-    #st.subheader(f"Current handicap: {current_handicap} - Best handicap: {best_handicap}")
-    #st.subheader(f"Best handicap: {best_handicap}")
+    st.subheader(f"Tesserato {df['Tesserato'][0]}")
+    st.subheader(
+        f"Your Current HCP is: {current_handicap} - Best handicap: {best_handicap}"
+    )
+    # st.subheader(f"Current handicap: {current_handicap} - Best handicap: {best_handicap}")
+    # st.subheader(f"Best handicap: {best_handicap}")
 
     st.header("Last 20 results")
     plot_last_20(df)
 
     st.write()
-    
+
     st.subheader("Your Last 100 results [Downloadable CSV]")
     st.write(st.write(st.session_state.df))
-    
+
     plot_last_100_results(df)
-#------------------------------------------------
-    
+
+
+# ------------------------------------------------
+
 if __name__ == "__main__":
     main()
