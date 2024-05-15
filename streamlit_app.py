@@ -2,8 +2,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
-from graphs import histo_100, plot_last_100_results
-from login_federgolf import login
+# from modules.graphs import histo_100, histo_100G, plot_last_100_results
+from modules.graphs import *
+from modules.login_federgolf import login
 
 # Set up the sidebar
 st.sidebar.title("Your FederGolf Companion")
@@ -27,7 +28,7 @@ def handle_logout():
     logout_button = st.sidebar.button("Logout")
     if logout_button:
         st.session_state.pop("df", None)
-        st.experimental_rerun()
+        st.rerun()
 
 
 # Main app logic
@@ -50,7 +51,7 @@ def main():
 
             if login_attempt:
                 st.session_state["df"] = df
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.write(
                     "Please enter both username and password. Something went wrong."
@@ -126,18 +127,16 @@ def fig_companion(dff):
 
     st.header("Last 20 results")
     plot_last_20(df)
-    
+
     st.header("Strokes in the Last 100 Rounds")
     histo_100(dff)
-    #histo_100G(dff)
+    histo_100G(dff)
 
-    
     st.header("Graph of the last 100 results")
     plot_last_100_results(df)
 
     st.subheader("Last 100 Rounds - All Your Data [Downloadable CSV]")
     st.write(st.write(st.session_state.df))
-
 
 
 # ------------------------------------------------
