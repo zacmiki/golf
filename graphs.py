@@ -67,3 +67,60 @@ def plot_last_100_results(dff):
 	
 	plt.tight_layout()
 	st.pyplot(fig)
+
+# ------- Histogram with Gaussian Fit
+
+def histo_100G(dff):
+	import matplotlib.pyplot as plt
+	import streamlit as st
+	import pandas as pd
+	import numpy as np
+	from scipy.stats import norm
+	
+	df = pd.DataFrame(dff)
+	
+	# Filter out non-finite values (None and zeros) from the DataFrame
+	filtered_data = df['AGS'].dropna().replace(0, np.nan).dropna()
+	
+	fig, ax = plt.subplots()
+	
+	# Calculate the maximum value of df['AGS']
+	max_value = filtered_data.max()
+	min_value = filtered_data.min()
+	
+	# Create a histogram with fixed range bins
+	hist, bins, _ = ax.hist(filtered_data, bins=range(70, int(max_value) + 15, 4), edgecolor='black', alpha=0.5)
+	
+	# Calculate bin centers
+	bin_centers = 0.5 * (bins[1:] + bins[:-1])
+	
+	# Fit a Gaussian distribution to the filtered data
+	mu, std = norm.fit(filtered_data)
+	
+	# Generate points along the Gaussian curve for smoother plotting
+	x_smooth = np.linspace(min_value -10 , max_value+10, 1000)
+	gaussian_curve = norm.pdf(x_smooth, mu, std) * len(filtered_data) * np.diff(bins)[0]  # scaling by bin width
+	
+	# Plot the Gaussian fit
+	ax.plot(x_smooth, gaussian_curve, 'r--', linewidth=2)
+	
+	# Add labels and title
+	ax.set_xlabel('Strokes per Round')
+	ax.set_ylabel('Frequency')
+	ax.set_title('Strokes per round in the Last 100 FIG Tournaments')
+	
+	# Show the grid
+	ax.grid(True)
+	
+	# Show both major and minor ticks
+	ax.minorticks_on()
+	
+	# Customize grid for minor ticks only on the y-axis
+	ax.grid(True, which='minor', axis='y', linestyle='--', color='red', linewidth=0.2)
+	
+	# Print the center value of the Gaussian
+	ax.text(mu, max(gaussian_curve), f'Center: {mu:.2f}', color='r', ha='center')
+	
+	# Display the plot using Streamlit
+	st.pyplot(fig)
+	
