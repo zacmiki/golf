@@ -6,6 +6,7 @@ from login_federgolf import login
 
 # Set up the sidebar
 st.sidebar.title("Your FederGolf Companion")
+st.caption("By Zac")
 st.sidebar.write("Please select an option from the sidebar.")
 
 
