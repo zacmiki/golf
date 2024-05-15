@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
+from graphs import histo_100, plot_last_100_results
 from login_federgolf import login
 
 # Set up the sidebar
@@ -67,25 +68,6 @@ def main():
             pass
 
 
-# Define a function to plot the last result
-def plot_last_100_results(df):
-    fig, ax = plt.subplots(figsize=(12, 6))
-
-    reversed_index = df.index[::-1]
-    ax.plot(df["Data"], df["Index Nuovo"], linestyle="-", marker="o")
-
-    ax.set_title("EGA Handicap vs Date for last 100 Rounds", fontsize=16)
-    ax.set_ylabel("EGA", fontsize=16)
-    ax.tick_params(axis="x", rotation=45)
-    ax.grid(True)
-
-    # Add minor ticks drawn in thin red dotted lines
-    ax.grid(which="minor", linestyle=":", linewidth=0.2, color="red")
-
-    plt.tight_layout()
-    st.pyplot(fig)
-
-
 def plot_last_20(df):
     fig, ax = plt.subplots(figsize=(12, 7))  # create a new Figure with fixed Size
     last_20_results = df.iloc[:20]
@@ -141,18 +123,19 @@ def fig_companion(dff):
     st.subheader(
         f"Your Current HCP is: {current_handicap} - Best handicap: {best_handicap}"
     )
-    # st.subheader(f"Current handicap: {current_handicap} - Best handicap: {best_handicap}")
-    # st.subheader(f"Best handicap: {best_handicap}")
 
     st.header("Last 20 results")
     plot_last_20(df)
+    
+    st.header("Strokes in the Last 100 Rounds")
+    histo_100(dff)
+    
+    st.header("Graph of the last 100 results")
+    plot_last_100_results(df)
 
-    st.write()
-
-    st.subheader("Your Last 100 results [Downloadable CSV]")
+    st.subheader("Last 100 Rounds - All Your Data [Downloadable CSV]")
     st.write(st.write(st.session_state.df))
 
-    plot_last_100_results(df)
 
 
 # ------------------------------------------------
