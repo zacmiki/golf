@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
-from graphs import histo_100, histo_100G, plot_last_100_results
+from graphs import histo_100, plot_last_100_results
 from login_federgolf import login
 
 # Set up the sidebar
