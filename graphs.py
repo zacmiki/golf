@@ -69,7 +69,7 @@ def plot_last_100_results(dff):
 	st.pyplot(fig)
 
 # ------- Histogram with Gaussian Fit
-
+'''
 def histo_100G(dff):
 	import matplotlib.pyplot as plt
 	import streamlit as st
@@ -123,4 +123,6 @@ def histo_100G(dff):
 	
 	# Display the plot using Streamlit
 	st.pyplot(fig)
+
+'''
 	
