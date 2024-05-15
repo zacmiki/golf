@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
+from scipy.stats import norm
+import numpy as np
 
 from graphs import histo_100, histo_100G, plot_last_100_results
 from login_federgolf import login
