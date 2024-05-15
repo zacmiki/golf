@@ -91,7 +91,7 @@ def fig_companion(dff, slider_value):
         )
     )
 
-    st.subheader("Last Results")
+    st.subheader("Plot of your Handicap progression")
     st.markdown(f"Showing last {slider_value} results:")
     plot_last_n(df, slider_value)
 
