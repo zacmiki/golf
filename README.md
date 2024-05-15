@@ -1,9 +1,5 @@
 ## Improving the README for Handicap Visualizer App
 
-### Handicap Visualizer App
-
-This repository contains a Streamlit web application for visualizing handicaps for golfers.
-
 ### Access the App
 
 Click the button below to access the Handicap Visualizer App:
