@@ -191,11 +191,7 @@ def extract_data(content):
     df["Stbl"] = pd.to_numeric(df["Stbl"], errors="coerce")
     df["Buche"] = pd.to_numeric(df["Buche"])
     df["Numero tessera"] = pd.to_numeric(df["Numero tessera"])
-
-    relevant_columns = ['Date_String', 'Gara', 'Stbl', 'AGS', 'SD', 'Index Nuovo']
-    strippeddf = df[relevant_columns].copy()
     
     st.session_state.df = df
-    st.session_state.strippeddf = strippeddf
 
     return df
