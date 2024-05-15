@@ -69,6 +69,8 @@ def main():
             pass
 
 
+# Cache this result to avoid recompting it every time
+@st.cache
 def plot_last_20(df):
     fig, ax = plt.subplots(figsize=(12, 7))  # create a new Figure with fixed Size
     last_20_results = df.iloc[:20]
