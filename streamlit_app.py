@@ -96,19 +96,15 @@ def fig_companion(dff, slider_value):
     plot_last_n(df, slider_value)
 
     # st.header("Strokes in the Last {} Rounds".format(slider_value))
-    st.header("Strokes in the Last 100 Rounds")
+    st.subheader("Strokes in the Last Rounds")
+    plot_gaussian = st.checkbox("Plot Gaussian")
+    histo_n(df, plot_gaussian, slider_value)
 
     # Future ideas
     # graph_last_n(df, slider_value, plot_type_mapping[selected_plot_type])
     # plot_type_options = list(plot_type_mapping.keys())
     # selected_plot_type = st.selectbox("Choose a plot type:", plot_type_options)
     # graph_last_n(df, slider_value, plot_type_mapping[selected_plot_type])
-
-    histo_100(df)
-    histo_100G(df)
-
-    st.subheader("Graph of the last 100 results")
-    plot_last_100_results(df)
 
     st.subheader("Last Rounds - All Your Data [Downloadable CSV]".format(slider_value))
     st.markdown(f"Dataframe of the last: {slider_value} rounds:")

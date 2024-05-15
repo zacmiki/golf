@@ -5,41 +5,6 @@ import streamlit as st
 from scipy.stats import norm
 
 
-# Histogram of the last n Rounds ------------------------------
-def histo_100(dff):
-    df = pd.DataFrame(dff)
-
-    # Assuming df is your pandas DataFrame
-    # Create a figure and axis object
-
-    fig, ax = plt.subplots()
-
-    # Calculate the maximum value of df['AGS']
-    max_value = df["AGS"].max()
-
-    # Create a histogram with fixed range bins
-    ax.hist(
-        df["AGS"], bins=range(70, int(max_value) + 15, 4), edgecolor="black", alpha=0.5
-    )
-
-    # Add labels and title
-    ax.set_xlabel("Strokes per Round")
-    ax.set_ylabel("Frequency")
-    ax.set_title("Strokes per round in the Last 100 FIG Tournaments")
-
-    # Show the grid
-    ax.grid(True)
-
-    # Show both major and minor ticks
-    ax.minorticks_on()
-
-    # Customize grid for minor ticks only on the y-axis
-    ax.grid(True, which="minor", axis="y", linestyle="--", color="red", linewidth=0.2)
-
-    # Display the plot using Streamlit
-    st.pyplot(fig)
-
-
 def grapr_last_n(dff, n, plot_type):
     df = pd.DataFrame(dff)
 
@@ -130,46 +95,52 @@ def plot_last_100_results(dff):
 
 
 # ------- Histogram with Gaussian Fit
-# '''
-def histo_100G(dff):
-    df = pd.DataFrame(dff)
-
+def histo_n(df, plot_gaussian=True, num_results=100):
     # Filter out non-finite values (None and zeros) from the DataFrame
     filtered_data = df["AGS"].dropna().replace(0, np.nan).dropna()
 
-    fig, ax = plt.subplots()
+    # Create a figure with a custom size
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-    # Calculate the maximum value of df['AGS']
-    max_value = filtered_data.max()
-    min_value = filtered_data.min()
+    # Get the last num_results values from filtered_data
+    last_n_values = filtered_data.iloc[-num_results:]
 
-    # Create a histogram with fixed range bins
+    # Calculate the maximum and minimum values of last_n_values
+    max_value = last_n_values.max()
+    min_value = last_n_values.min()
+
+    # Create a histogram with fixed range bins and custom bin width
+    bins = range(70, int(max_value) + 4, 4)
     hist, bins, _ = ax.hist(
-        filtered_data,
-        bins=range(70, int(max_value) + 15, 4),
+        last_n_values,
+        bins=bins,
         edgecolor="black",
         alpha=0.5,
+        color="lightblue",
     )
 
     # Calculate bin centers
-    bin_centers = 0.5 * (bins[1:] + bins[:-1])
+    # bin_centers = 0.5 * (bins[1:] + bins[:-1])
 
-    # Fit a Gaussian distribution to the filtered data
-    mu, std = norm.fit(filtered_data)
+    # Fit a Gaussian distribution to the last_n_values
+    mu, std = norm.fit(last_n_values)
 
     # Generate points along the Gaussian curve for smoother plotting
     x_smooth = np.linspace(min_value - 10, max_value + 10, 1000)
     gaussian_curve = (
-        norm.pdf(x_smooth, mu, std) * len(filtered_data) * np.diff(bins)[0]
+        norm.pdf(x_smooth, mu, std) * len(last_n_values) * np.diff(bins)[0]
     )  # scaling by bin width
 
-    # Plot the Gaussian fit
-    ax.plot(x_smooth, gaussian_curve, "r--", linewidth=2)
+    # Plot the Gaussian fit if the user wants to
+    if plot_gaussian:
+        ax.plot(x_smooth, gaussian_curve, "r--", linewidth=2)
 
     # Add labels and title
-    ax.set_xlabel("Strokes per Round")
-    ax.set_ylabel("Frequency")
-    ax.set_title("Strokes per round in the Last 100 FIG Tournaments")
+    ax.set_xlabel("Strokes per Round", fontsize=12)
+    ax.set_ylabel("Frequency", fontsize=12)
+    ax.set_title(
+        f"Strokes per round in the Last {num_results} FIG Tournaments", fontsize=14
+    )
 
     # Show the grid
     ax.grid(True)
@@ -181,7 +152,17 @@ def histo_100G(dff):
     ax.grid(True, which="minor", axis="y", linestyle="--", color="red", linewidth=0.2)
 
     # Print the center value of the Gaussian
-    ax.text(mu, max(gaussian_curve), f"Center: {mu:.2f}", color="r", ha="center")
+    ax.text(
+        mu,
+        max(gaussian_curve) * 0.9,
+        f"Center: {mu:.2f}",
+        color="r",
+        ha="center",
+        fontsize=12,
+    )
+
+    # Add a legend for the Gaussian fit
+    ax.legend(["Gaussian Fit"], loc="upper right", fontsize=10)
 
     # Display the plot using Streamlit
     st.pyplot(fig)
