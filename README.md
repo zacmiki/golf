@@ -8,7 +8,7 @@ This repository contains a Streamlit web application for visualizing handicaps f
 
 Click the button below to access the Handicap Visualizer App:
 
-[Access Handicap Visualizer App](https://yrxtazef7r7evpwecdey78.streamlit.app/)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://yrxtazef7r7evpwecdey78.streamlit.app/)
 
 ### Installation
 
