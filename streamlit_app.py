@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
-from graphs import histo_100, plot_last_100_results
+from graphs import histo_100, histo_100G, plot_last_100_results
 from login_federgolf import login
 
 # Set up the sidebar
@@ -128,7 +128,9 @@ def fig_companion(dff):
     plot_last_20(df)
     
     st.header("Strokes in the Last 100 Rounds")
-    histo_100(dff)
+    #histo_100(dff)
+    histo_100G
+
     
     st.header("Graph of the last 100 results")
     plot_last_100_results(df)
