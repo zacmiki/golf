@@ -1,9 +1,12 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import streamlit as st
+from scipy.stats import norm
+
+
 # Histogram of the last n Rounds ------------------------------
 def histo_100(dff):
-    import matplotlib.pyplot as plt
-    import pandas as pd
-    import streamlit as st
-
     df = pd.DataFrame(dff)
 
     # Assuming df is your pandas DataFrame
@@ -38,10 +41,6 @@ def histo_100(dff):
 
 
 def grapr_last_n(dff, n, plot_type):
-    import matplotlib.pyplot as plt
-    import pandas as pd
-    import streamlit as st
-
     df = pd.DataFrame(dff)
 
     # Create a figure and axis object
@@ -99,10 +98,6 @@ def grapr_last_n(dff, n, plot_type):
 
 # Plot the last 100 Results ------------------------
 def plot_last_100_results(dff):
-    import matplotlib.pyplot as plt
-    import pandas as pd
-    import streamlit as st
-
     df = pd.DataFrame(dff)
     fig, ax = plt.subplots(figsize=(12, 7))
 
@@ -137,12 +132,6 @@ def plot_last_100_results(dff):
 # ------- Histogram with Gaussian Fit
 # '''
 def histo_100G(dff):
-    import matplotlib.pyplot as plt
-    import numpy as np
-    import pandas as pd
-    import streamlit as st
-    from scipy.stats import norm
-
     df = pd.DataFrame(dff)
 
     # Filter out non-finite values (None and zeros) from the DataFrame
