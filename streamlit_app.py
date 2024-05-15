@@ -129,7 +129,7 @@ def fig_companion(dff):
     
     st.header("Strokes in the Last 100 Rounds")
     #histo_100(dff)
-    histo_100G
+    histo_100G(dff)
 
     
     st.header("Graph of the last 100 results")
