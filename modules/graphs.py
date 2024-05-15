@@ -1,4 +1,4 @@
-# Histogram of the last 100 Rounds ------------------------------
+# Histogram of the last n Rounds ------------------------------
 def histo_100(dff):
     import matplotlib.pyplot as plt
     import pandas as pd
@@ -37,9 +37,67 @@ def histo_100(dff):
     st.pyplot(fig)
 
 
+def grapr_last_n(dff, n, plot_type):
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import streamlit as st
+
+    df = pd.DataFrame(dff)
+
+    # Create a figure and axis object
+    fig, ax = plt.subplots()
+
+    if plot_type == "histogram":
+        # Calculate the maximum value of df['AGS']
+        max_value = df["AGS"].max()
+
+        # Create a histogram with fixed range bins
+        ax.hist(
+            df["AGS"][-n:],
+            bins=range(70, int(max_value) + 15, 4),
+            edgecolor="black",
+            alpha=0.5,
+        )
+
+        # Add labels and title
+        ax.set_xlabel("Strokes per Round")
+        ax.set_ylabel("Frequency")
+        ax.set_title("Strokes per round in the Last {} FIG Tournaments".format(n))
+
+        # Show the grid
+        ax.grid(True)
+
+        # Show both major and minor ticks
+        ax.minorticks_on()
+
+        # Customize grid for minor ticks only on the y-axis
+        ax.grid(
+            True, which="minor", axis="y", linestyle="--", color="red", linewidth=0.2
+        )
+
+    elif plot_type == "scatter":
+        ax.scatter(df["Date_String"][-n:], df["AGS"][-n:])
+        ax.set_title("Strokes per Round vs Date")
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Strokes per Round")
+
+    elif plot_type == "line":
+        ax.plot(df["Date_String"][-n:], df["AGS"][-n:])
+        ax.set_title("Strokes per Round over Time")
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Strokes per Round")
+
+    elif plot_type == "bar":
+        ax.bar(df["Date_String"][-n:], df["AGS"][-n:])
+        ax.set_title("Strokes per Round")
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Strokes per Round")
+
+    # Display the plot using Streamlit
+    st.pyplot(fig)
+
+
 # Plot the last 100 Results ------------------------
-
-
 def plot_last_100_results(dff):
     import matplotlib.pyplot as plt
     import pandas as pd
@@ -138,6 +196,3 @@ def histo_100G(dff):
 
     # Display the plot using Streamlit
     st.pyplot(fig)
-
-
-# '''
