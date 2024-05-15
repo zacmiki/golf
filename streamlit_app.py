@@ -30,43 +30,6 @@ def handle_logout():
         st.rerun()
 
 
-# Cache this result to avoid recompting it every time
-@st.cache_data
-def plot_last_n(df, n):
-    fig, ax = plt.subplots(figsize=(12, 7))
-    last_n_results = df.iloc[:n]
-
-    ax.plot(
-        last_n_results["Date_String"][::-1],
-        last_n_results["Index Nuovo"][::-1],
-        linestyle="-",
-        marker="o",
-    )
-    ax.fill_between(
-        last_n_results["Date_String"][::-1],
-        last_n_results["Index Nuovo"][::-1],
-        color="skyblue",
-        alpha=0.5,
-    )
-
-    ax.set_title("EGA Handicap for last {} Rounds".format(n), fontsize=16)
-    ax.set_ylabel("EGA", fontsize=16)
-
-    ax.minorticks_on()
-    ax.grid(which="minor", linestyle=":", linewidth=0.2, color="red")
-    ax.grid(True)
-    ax.tick_params(axis="x", rotation=45)
-    ax.set_xticks(range(0, len(last_n_results["Date_String"][::-1]), 2))
-    ax.set_xticklabels(last_n_results["Date_String"][::-1].iloc[::2])
-    ax.set_ylim(
-        last_n_results["Index Nuovo"].min() - 0.2,
-        last_n_results["Index Nuovo"].max() + 0.2,
-    )
-
-    plt.tight_layout()
-    st.pyplot(fig)
-
-
 def fig_companion(dff, slider_value):
 
     plot_type_mapping = {
@@ -98,6 +61,7 @@ def fig_companion(dff, slider_value):
     # st.header("Strokes in the Last {} Rounds".format(slider_value))
     st.subheader("Strokes in the Last Rounds")
     plot_gaussian = st.checkbox("Plot Gaussian")
+    # bar_plot_n(df, plot_gaussian, slider_value)
     histo_n(df, plot_gaussian, slider_value)
 
     # Future ideas
@@ -146,6 +110,12 @@ def main():
 
             # Add a logout button in the sidebar
             handle_logout()
+
+        elif selected_option == "New HCP Calculator (In Progress)":
+            handle_logout()
+
+        else:
+            pass
 
 
 # ------------------------------------------------

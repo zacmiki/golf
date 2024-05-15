@@ -61,7 +61,45 @@ def grapr_last_n(dff, n, plot_type):
     st.pyplot(fig)
 
 
+# Cache this result to avoid recompting it every time
+@st.cache_data
+def plot_last_n(df, n):
+    fig, ax = plt.subplots(figsize=(12, 7))
+    last_n_results = df.iloc[:n]
+
+    ax.plot(
+        last_n_results["Date_String"][::-1],
+        last_n_results["Index Nuovo"][::-1],
+        linestyle="-",
+        marker="o",
+    )
+    ax.fill_between(
+        last_n_results["Date_String"][::-1],
+        last_n_results["Index Nuovo"][::-1],
+        color="skyblue",
+        alpha=0.5,
+    )
+
+    ax.set_title("EGA Handicap for last {} Rounds".format(n), fontsize=16)
+    ax.set_ylabel("EGA", fontsize=16)
+
+    ax.minorticks_on()
+    ax.grid(which="minor", linestyle=":", linewidth=0.2, color="red")
+    ax.grid(True)
+    ax.tick_params(axis="x", rotation=45)
+    ax.set_xticks(range(0, len(last_n_results["Date_String"][::-1]), 2))
+    ax.set_xticklabels(last_n_results["Date_String"][::-1].iloc[::2])
+    ax.set_ylim(
+        last_n_results["Index Nuovo"].min() - 0.2,
+        last_n_results["Index Nuovo"].max() + 0.2,
+    )
+
+    plt.tight_layout()
+    st.pyplot(fig)
+
+
 # ------- Histogram with Gaussian Fit
+@st.cache_data
 def histo_n(df, plot_gaussian=True, num_results=100):
     # Filter out non-finite values (None and zeros) from the DataFrame
     filtered_data = df["AGS"].dropna().replace(0, np.nan).dropna()
@@ -165,3 +203,78 @@ def plot_last_100_results(df):
 
     plt.tight_layout()
     st.pyplot(fig)
+
+
+# ------- Bar Plot with Gaussian Fit
+# @st.cache_data
+# def bar_plot_n(df, plot_gaussian=True, num_results=100):
+#     # Filter out non-finite values (None and zeros) from the DataFrame
+#     filtered_data = df["AGS"].dropna().replace(0, np.nan).dropna()
+#
+#     # Create a figure with a custom size
+#     fig, ax = plt.subplots(figsize=(10, 6))
+#
+#     # Get the last num_results values from filtered_data
+#     last_n_values = filtered_data.iloc[-num_results:]
+#
+#     # Create a bar plot with the last num_results values
+#     ax.bar(
+#         range(1, len(last_n_values) + 1),
+#         last_n_values,
+#         edgecolor="black",
+#         color="lightblue",
+#     )
+#
+#     # Fit a Gaussian distribution to the last_n_values
+#     mu, std = norm.fit(last_n_values)
+#
+#     # Generate points along the Gaussian curve for smoother plotting
+#     x_smooth = np.linspace(min(last_n_values) - 10, max(last_n_values) + 10, 1000)
+#     gaussian_curve = norm.pdf(x_smooth, mu, std) * len(last_n_values)
+#
+#     # Plot the Gaussian fit if the user wants to
+#     if plot_gaussian:
+#         ax.plot(x_smooth, gaussian_curve, "r--", linewidth=2)
+#
+#     # Add labels and title
+#     ax.set_xlabel("Tournament", fontsize=12)
+#     ax.set_ylabel("Strokes per Round", fontsize=12)
+#     ax.set_title(
+#         f"Strokes per round in the Last {num_results} FIG Tournaments", fontsize=14
+#     )
+#
+#     # Set x-axis tick labels to tournament numbers
+#     ax.set_xticks(range(1, len(last_n_values) + 1))
+#     ax.set_xticklabels(
+#         [f"Tournament {i}" for i in range(len(last_n_values), 0, -1)],
+#         rotation=45,
+#         ha="right",
+#     )
+#
+#     # Show the grid
+#     ax.grid(True)
+#
+#     # Show both major and minor ticks
+#     ax.minorticks_on()
+#
+#     # Customize grid for minor ticks only on the y-axis
+#     ax.grid(True, which="minor", axis="y", linestyle="--", color="red", linewidth=0.2)
+#
+#     # Print the center value of the Gaussian
+#     ax.text(
+#         0.95,
+#         max(gaussian_curve) * 0.9,
+#         f"Center: {mu:.2f}",
+#         color="r",
+#         ha="right",
+#         va="top",
+#         transform=ax.transAxes,
+#         fontsize=12,
+#     )
+#
+#     if plot_gaussian:
+#         # Add a legend for the Gaussian fit
+#         ax.legend(["Gaussian Fit"], loc="upper right", fontsize=10)
+#
+#     # Display the plot using Streamlit
+#     st.pyplot(fig)
