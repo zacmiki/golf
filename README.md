@@ -1,4 +1,4 @@
-## Improving the README for Handicap Visualizer App
+# Improving the README for Handicap Visualizer App
 
 ### Access the App
 >  Click the button below to access the Handicap Visualizer App
