@@ -5,88 +5,44 @@ import streamlit as st
 from scipy.stats import norm
 
 
-def graph_last_n(dff, n, plot_type):
-    df = pd.DataFrame(dff)
-
-    # Create a figure and axis object
-    fig, ax = plt.subplots()
-
-    if plot_type == "histogram":
-        # Calculate the maximum value of df['AGS']
-        max_value = df["AGS"].max()
-
-        # Create a histogram with fixed range bins
-        ax.hist(
-            df["AGS"][-n:],
-            bins=range(70, int(max_value) + 15, 4),
-            edgecolor="black",
-            alpha=0.5,
-        )
-
-        # Add labels and title
-        ax.set_xlabel("Strokes per Round")
-        ax.set_ylabel("Frequency")
-        ax.set_title("Strokes per round in the Last {} FIG Tournaments".format(n))
-
-        # Show the grid
-        ax.grid(True)
-
-        # Show both major and minor ticks
-        ax.minorticks_on()
-
-        # Customize grid for minor ticks only on the y-axis
-        ax.grid(
-            True, which="minor", axis="y", linestyle="--", color="red", linewidth=0.2
-        )
-
-    elif plot_type == "scatter":
-        ax.scatter(df["Date_String"][-n:], df["AGS"][-n:])
-        ax.set_title("Strokes per Round vs Date")
-        ax.set_xlabel("Date")
-        ax.set_ylabel("Strokes per Round")
-
-    elif plot_type == "line":
-        ax.plot(df["Date_String"][-n:], df["AGS"][-n:])
-        ax.set_title("Strokes per Round over Time")
-        ax.set_xlabel("Date")
-        ax.set_ylabel("Strokes per Round")
-
-    elif plot_type == "bar":
-        ax.bar(df["Date_String"][-n:], df["AGS"][-n:])
-        ax.set_title("Strokes per Round")
-        ax.set_xlabel("Date")
-        ax.set_ylabel("Strokes per Round")
-
-    # Display the plot using Streamlit
-    st.pyplot(fig)
-
-
-# Cache this result to avoid recompting it every time
+# Cache this result to avoid recomputing it every time
 @st.cache_data
-def plot_last_n(df, n):
+def plot_last_n(df, n, plot_type="line"):
     fig, ax = plt.subplots(figsize=(12, 7))
     last_n_results = df.iloc[:n]
 
-    ax.plot(
-        last_n_results["Date_String"][::-1],
-        last_n_results["Index Nuovo"][::-1],
-        linestyle="-",
-        marker="o",
-    )
-    ax.fill_between(
-        last_n_results["Date_String"][::-1],
-        last_n_results["Index Nuovo"][::-1],
-        color="skyblue",
-        alpha=0.5,
-    )
+    if plot_type == "scatter":
+        ax.scatter(
+            last_n_results["Date_String"][::-1],
+            last_n_results["Index Nuovo"][::-1],
+        )
+    elif plot_type == "line":
+        ax.plot(
+            last_n_results["Date_String"][::-1],
+            last_n_results["Index Nuovo"][::-1],
+            linestyle="-",
+            marker="o",
+        )
+        ax.fill_between(
+            last_n_results["Date_String"][::-1],
+            last_n_results["Index Nuovo"][::-1],
+            color="skyblue",
+            alpha=0.5,
+        )
+        ax.grid(True)  # Add grid lines only for line plot
+    elif plot_type == "bar":
+        ax.bar(last_n_results["Date_String"][::-1], last_n_results["Index Nuovo"][::-1])
+    elif plot_type == "hist":
+        # Determine the number of bins based on the data range and size
+        num_bins = min(10, len(last_n_results))
+        ax.hist(last_n_results["Index Nuovo"][::-1], bins=num_bins)
 
     ax.set_title("EGA Handicap for last {} Rounds".format(n), fontsize=16)
     ax.set_ylabel("EGA", fontsize=16)
 
-    ax.minorticks_on()
-    ax.grid(which="minor", linestyle=":", linewidth=0.2, color="red")
-    ax.grid(True)
+    ax.minorticks_off()
     ax.tick_params(axis="x", rotation=45)
+    ax.tick_params(axis="y", which="both", length=0)  # Remove y-axis ticks
     ax.set_xticks(range(0, len(last_n_results["Date_String"][::-1]), 2))
     ax.set_xticklabels(last_n_results["Date_String"][::-1].iloc[::2])
     ax.set_ylim(
@@ -124,9 +80,6 @@ def histo_n(df, plot_gaussian=True, num_results=100):
         color="lightblue",
     )
 
-    # Calculate bin centers
-    # bin_centers = 0.5 * (bins[1:] + bins[:-1])
-
     # Fit a Gaussian distribution to the last_n_values
     mu, std = norm.fit(last_n_values)
 
@@ -144,17 +97,17 @@ def histo_n(df, plot_gaussian=True, num_results=100):
     ax.set_xlabel("Strokes per Round", fontsize=12)
     ax.set_ylabel("Frequency", fontsize=12)
     ax.set_title(
-        f"Strokes per round in the Last {num_results} FIG Tournaments", fontsize=14
+        f"Strokes per round in the Last {num_results} FIG Tournaments", fontsize=12
     )
 
     # Show the grid
-    ax.grid(True)
+    ax.grid(False)  # Remove grid lines
 
     # Show both major and minor ticks
-    ax.minorticks_on()
+    ax.minorticks_off()  # Turn off minor ticks
 
-    # Customize grid for minor ticks only on the y-axis
-    ax.grid(True, which="minor", axis="y", linestyle="--", color="red", linewidth=0.2)
+    # Customize grid for major ticks
+    ax.grid(True, which="major", linestyle="-", linewidth=0.5)  # Adjust grid style
 
     # Print the center value of the Gaussian
     ax.text(
@@ -163,118 +116,11 @@ def histo_n(df, plot_gaussian=True, num_results=100):
         f"Center: {mu:.2f}",
         color="r",
         ha="center",
-        fontsize=12,
+        fontsize=10,
     )
 
     # Add a legend for the Gaussian fit
-    ax.legend(["Gaussian Fit"], loc="upper right", fontsize=10)
+    ax.legend(["Gaussian Fit"], loc="upper right", fontsize=8)
 
     # Display the plot using Streamlit
     st.pyplot(fig)
-
-
-# Plot the last 100 Results ------------------------
-def plot_last_100_results(df):
-    fig, ax = plt.subplots(figsize=(12, 7))
-
-    # reversed_index = df.index[::-1]
-    ax.plot(
-        df["Date_String"][::-1],
-        df["Index Nuovo"][::-1],
-        linestyle="-",
-        marker="o",
-        color="purple",
-        markersize=8,
-    )
-    # ax.plot(df["Data"], df["Index Nuovo"], linestyle="-", marker="o")
-
-    ax.set_title("EGA Handicap vs Date for last 100 Rounds", fontsize=16)
-
-    ax.set_ylabel("EGA", fontsize=16)
-    ax.tick_params(axis="x", rotation=45)
-    ax.grid(True)
-
-    # Add minor ticks drawn in thin red dotted lines
-    ax.grid(which="minor", linestyle=":", linewidth=0.2, color="red")
-
-    # Set Special ticks for allocating the Strings
-    ax.set_xticks(range(0, len(df["Date_String"][::-1]), 6))
-    ax.set_xticklabels(df["Date_String"][::-1].iloc[::6])
-
-    plt.tight_layout()
-    st.pyplot(fig)
-
-
-# ------- Bar Plot with Gaussian Fit
-# @st.cache_data
-# def bar_plot_n(df, plot_gaussian=True, num_results=100):
-#     # Filter out non-finite values (None and zeros) from the DataFrame
-#     filtered_data = df["AGS"].dropna().replace(0, np.nan).dropna()
-#
-#     # Create a figure with a custom size
-#     fig, ax = plt.subplots(figsize=(10, 6))
-#
-#     # Get the last num_results values from filtered_data
-#     last_n_values = filtered_data.iloc[-num_results:]
-#
-#     # Create a bar plot with the last num_results values
-#     ax.bar(
-#         range(1, len(last_n_values) + 1),
-#         last_n_values,
-#         edgecolor="black",
-#         color="lightblue",
-#     )
-#
-#     # Fit a Gaussian distribution to the last_n_values
-#     mu, std = norm.fit(last_n_values)
-#
-#     # Generate points along the Gaussian curve for smoother plotting
-#     x_smooth = np.linspace(min(last_n_values) - 10, max(last_n_values) + 10, 1000)
-#     gaussian_curve = norm.pdf(x_smooth, mu, std) * len(last_n_values)
-#
-#     # Plot the Gaussian fit if the user wants to
-#     if plot_gaussian:
-#         ax.plot(x_smooth, gaussian_curve, "r--", linewidth=2)
-#
-#     # Add labels and title
-#     ax.set_xlabel("Tournament", fontsize=12)
-#     ax.set_ylabel("Strokes per Round", fontsize=12)
-#     ax.set_title(
-#         f"Strokes per round in the Last {num_results} FIG Tournaments", fontsize=14
-#     )
-#
-#     # Set x-axis tick labels to tournament numbers
-#     ax.set_xticks(range(1, len(last_n_values) + 1))
-#     ax.set_xticklabels(
-#         [f"Tournament {i}" for i in range(len(last_n_values), 0, -1)],
-#         rotation=45,
-#         ha="right",
-#     )
-#
-#     # Show the grid
-#     ax.grid(True)
-#
-#     # Show both major and minor ticks
-#     ax.minorticks_on()
-#
-#     # Customize grid for minor ticks only on the y-axis
-#     ax.grid(True, which="minor", axis="y", linestyle="--", color="red", linewidth=0.2)
-#
-#     # Print the center value of the Gaussian
-#     ax.text(
-#         0.95,
-#         max(gaussian_curve) * 0.9,
-#         f"Center: {mu:.2f}",
-#         color="r",
-#         ha="right",
-#         va="top",
-#         transform=ax.transAxes,
-#         fontsize=12,
-#     )
-#
-#     if plot_gaussian:
-#         # Add a legend for the Gaussian fit
-#         ax.legend(["Gaussian Fit"], loc="upper right", fontsize=10)
-#
-#     # Display the plot using Streamlit
-#     st.pyplot(fig)
