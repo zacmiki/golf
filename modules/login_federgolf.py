@@ -1,12 +1,11 @@
+import pandas as pd
+import requests
 import streamlit as st
+from bs4 import BeautifulSoup
 
 
 # Login and call the function to extract data
 def login(username, password):
-    import pandas as pd
-    import requests
-    from bs4 import BeautifulSoup
-
     success = False
 
     # Make the first request
@@ -36,13 +35,23 @@ def login(username, password):
     }
 
     response = requests.get(url, headers=request_headers)
+
+    # If the first request fails, return False and an empty DataFrame
+    if response.status_code != 200:
+        return False
+
     # print(response.status_code)
 
     # Get the necessaary information for the next requests from the cookies
     # ----------------------------------------
     request_verification_token = response.cookies.get("__RequestVerificationToken")
+    st.session_state.request_verification_token = request_verification_token
+
     arraffinity = response.cookies.get("ARRAffinity")
+    st.session_state.arraffinity = arraffinity
+
     arraffinity_same_site = response.cookies.get("ARRAffinitySameSite")
+    st.session_state.arraffinity_same_site = arraffinity_same_site
 
     # Get the info from the html
     # ----------------------------------------
@@ -60,6 +69,8 @@ def login(username, password):
             # Extract the value of antiforgeryToken
             antiforgery_token = script_content.split('value="')[1].split('"')[0]
             break  # Exit the loop after finding the antiforgeryToken
+
+    st.session_state.antiforgery_token = antiforgery_token
 
     # Make the second request
     # ============================================================================================
@@ -98,19 +109,28 @@ def login(username, password):
     response = requests.post(url, data=data, headers=headers)
 
     # Get Session id from the cookies
-    session_id = response.cookies.get("ASP.NET_SessionId")
+    session_id = response.cookies.get("ASP.NET_SessionId", None)
+    st.session_state.session_id = session_id
 
-    # print(response.status_code)
+    # If the third request fails, return False and an empty DataFrame
+    # We check the lenght of the response
+    if response.status_code != 200 or len(response.content) != 11666:
+        return False
 
+    # If all requests are successful, set success to True and extract the data
+    return True
+
+
+# Extract data in the correct format
+def extract_data():
     # Make the third request
     # ============================================================================================
-
     url = "https://areariservata.federgolf.it/Risultati/ShowGrid"
 
     request_headers = {
         "Host": "areariservata.federgolf.it",
         # "Cookie": f"_fbp=fb.1.1715410992155.276799353; ASP.NET_SessionId=0bb4w1pr5n1avxi42wclunhb; __RequestVerificationToken=Q3cQZ6rRNuCFJJ1PDGPWihBGMadA-2bH6ML37Ll5eWbcvrq9drjRkoHZVPnvoR44MIk131av4rtbREXSYdYneFIa2RHg764DHXYZH6Zx_bI1; ARRAffinity=ffb49eabd953a476cb98d9c8c11af5f9d36554739c50a642edc8826844f26d98; ARRAffinitySameSite=ffb49eabd953a476cb98d9c8c11af5f9d36554739c50a642edc8826844f26d98; lb_csc=necessary_cookies,third_party_adv_cookies,third_party_stats_cookies; version=2; _ga=GA1.1.605352262.1715410994; _ga_QBY22814GG=GS1.1.1715410992.1715410994; _ga_QBY22814GG=GS1.1.1715410992.1.0.1715410996.0.0.0",
-        "Cookie": f"_fbp=fb.1.1715410992155.276799353; ASP.NET_SessionId={session_id}; __RequestVerificationToken={request_verification_token}; ARRAffinity={arraffinity}; ARRAffinitySameSite={arraffinity_same_site}; lb_csc=necessary_cookies,third_party_adv_cookies,third_party_stats_cookies; version=2; _ga=GA1.1.605352262.1715410994; _ga_QBY22814GG=GS1.1.1715410992.1.0.1715410996.0.0.0",
+        "Cookie": f"_fbp=fb.1.1715410992155.276799353; ASP.NET_SessionId={st.session_state.session_id}; __RequestVerificationToken={st.session_state.request_verification_token}; ARRAffinity={st.session_state.arraffinity}; ARRAffinitySameSite={st.session_state.arraffinity_same_site}; lb_csc=necessary_cookies,third_party_adv_cookies,third_party_stats_cookies; version=2; _ga=GA1.1.605352262.1715410994; _ga_QBY22814GG=GS1.1.1715410992.1.0.1715410996.0.0.0",
         "Sec-Ch-Ua": '"Not-A.Brand";v="99", "Chromium";v="124"',
         "Sec-Ch-Ua-Mobile": "?0",
         "Sec-Ch-Ua-Platform": '"macOS"',
@@ -129,22 +149,10 @@ def login(username, password):
 
     response = requests.get(url, headers=request_headers)
 
-    # If status code is 200 then the request worked
-    if response.status_code == 200:
-        success = True
+    if response.status_code != 200:
+        return None
 
-    df = extract_data(response.content)
-
-    return success, df
-
-
-# Exracat data in the corect format
-def extract_data(content):
-    import pandas as pd
-    from bs4 import BeautifulSoup
-
-    ####  --------- EXTRACTING THE DATA AND PLACING THEM IN A PANDA DATAFRAME
-    soup = BeautifulSoup(content, "html.parser")
+    soup = BeautifulSoup(response.content, "html.parser")
     table = soup.find("table", class_="entity-list-view w-100")
     vocihtml = soup.find_all(class_="th-wrapper")
     tabletitles = [titoli.text for titoli in vocihtml]
@@ -191,7 +199,75 @@ def extract_data(content):
     df["Stbl"] = pd.to_numeric(df["Stbl"], errors="coerce")
     df["Buche"] = pd.to_numeric(df["Buche"])
     df["Numero tessera"] = pd.to_numeric(df["Numero tessera"])
-    
+
     st.session_state.df = df
 
     return df
+
+
+# Function to perform the additional requests
+# def handicap_request(selected_percorso, tee, hcp):
+def handicap_request(tee, hcp):
+    # First POST request
+    selected_circolo = "0a68d8fc-4339-4f92-889d-fbc60747d7bb"
+
+    url = "https://areariservata.federgolf.it/CourseHandicapCalc/Calc"
+    headers = {
+        "Host": "areariservata.federgolf.it",
+        "Cookie": f"ASP.NET_SessionId={st.session_state.session_id}; __RequestVerificationToken={st.session_state.request_verification_token}; ARRAffinity={st.session_state.arraffinity}; ARRAffinitySameSite={st.session_state.arraffinity_same_site}",
+        "Cache-Control": "max-age=0",
+        "Sec-Ch-Ua": '"Not-A.Brand";v="99", "Chromium";v="124"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"macOS"',
+        "Upgrade-Insecure-Requests": "1",
+        "Origin": "https://areariservata.federgolf.it",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.118 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Sec-Fetch-Site": "same-origin",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-User": "?1",
+        "Sec-Fetch-Dest": "document",
+        "Referer": "https://areariservata.federgolf.it/CourseHandicapCalc/Index",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
+        "Priority": "u=0, i",
+        "Connection": "close",
+    }
+
+    # First request data
+    data1 = {
+        "selectedCircolo": selected_circolo,
+        "SelectedPercorso": "",
+        "hcp": "",
+        "__RequestVerificationToken": st.session_state.antiforgery_token,
+    }
+
+    print(requests)
+    response1 = requests.post(url, data=data1, headers=headers)
+
+    print("First Request Response Status Code:", response1.status_code)
+    print("First Request Response Content:", response1.content.decode())
+
+    if response1.status_code != 200:
+        return False
+
+    # Second POST request data
+    selected_percorso = "c409a93b-af1b-43c6-b735-00bf5d612885"
+    data2 = {
+        "selectedCircolo": selected_circolo,
+        "SelectedPercorso": selected_percorso,
+        "tee": tee,
+        "hcp": hcp,
+        "__RequestVerificationToken": st.session_state.request_verification_token,
+    }
+
+    response2 = requests.post(url, data=data2, headers=headers)
+
+    print("Second Request Response Status Code:", response2.status_code)
+    print("Second Request Response Content:", response2.content.decode())
+
+    if response2.status_code != 200:
+        return None
+
+    return response2.content

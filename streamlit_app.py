@@ -1,10 +1,9 @@
-import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
 from modules.graphs import *
 from modules.hcp_functions import *
-from modules.login_federgolf import login
+from modules.login_federgolf import extract_data, handicap_request, login
 
 # Set up the sidebar
 st.sidebar.title("Your FederGolf Companion")
@@ -27,6 +26,7 @@ def handle_logout():
     st.sidebar.write("---")
     logout_button = st.sidebar.button("Logout")
     if logout_button:
+        st.session_state.pop("logged_in", None)
         st.session_state.pop("df", None)
         st.rerun()
 
@@ -41,23 +41,32 @@ def main():
         ],
     )
 
+    # Initialize the logged_in state if not set
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+
     # Check if the user has already logged in
-    if "df" not in st.session_state:
+    if st.session_state.logged_in == False:
         username, password, submit_button = display_login_form()
-        login_attempt = False
 
         if submit_button:
-            login_attempt, df = login(username, password)
+            st.session_state.logged_in = login(username, password)
+            print(st.session_state.logged_in)
 
-            if login_attempt:
-                st.session_state["df"] = df
+            if st.session_state.logged_in == True:
                 st.rerun()
             else:
+                st.session_state.df = pd.DataFrame()  # Initialize df
                 st.write(
                     "Please enter both username and password. Something went wrong."
                 )
+                st.rerun()
     else:
         if selected_option == "Data Visualization":
+            # Make the request to extract the data
+            if "df" not in st.session_state or st.session_state.df.empty:
+                st.session_state.df = extract_data()
+
             # User has already logged in, display the handicap visualizer
             slider_value = st.sidebar.slider(
                 "Select the number of results:", 1, 100, 20
@@ -68,8 +77,13 @@ def main():
             handle_logout()
 
         elif selected_option == "HCP Manager":
+            if "df" not in st.session_state or st.session_state.df.empty:
+                st.session_state.df = extract_data()
+
             # User has already logged in, display the handicap visualizer
             loadcoursetable(st.session_state.df)
+            st.write(handicap_request(tee="Gialli", hcp=18))
+
             # Add a logout button in the sidebar
             handle_logout()
 
@@ -78,8 +92,6 @@ def main():
 
 
 # ------------- Visualization Page ------ F.I.G. Session -----------
-
-
 def fig_companion(df, slider_value):
 
     plot_type_mapping = {
@@ -114,7 +126,6 @@ def fig_companion(df, slider_value):
     # st.header("Strokes in the Last {} Rounds".format(slider_value))
     st.subheader("Strokes in the Last Rounds")
     plot_gaussian = st.checkbox("Plot Gaussian")
-    # bar_plot_n(df, plot_gaussian, slider_value)
     histo_n(df, plot_gaussian, slider_value)
 
     st.subheader("Last Rounds - All Your Data [Downloadable CSV]".format(slider_value))
