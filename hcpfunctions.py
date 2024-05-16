@@ -39,7 +39,7 @@ def loadcoursetable(dff):
     st.success(f"Your Current HCP is: {current_handicap} - Best handicap: {best_handicap}", icon="⛳️",)
     st.info(f"Your Next EXPIRING Round is" )
     st.subheader(f" {strippeddf.iloc[-1]['Gara']}")
-    st.subheader(f"Date: {strippeddf.iloc[-1]['Date']} - Stableford = {strippeddf.iloc[-1]['Stbl']} - SD = {strippeddf.iloc[-1]['Stbl']}")
+    st.subheader(f"Date: {strippeddf.iloc[-1]['Date']} - Stableford = {strippeddf.iloc[-1]['Stbl']} - SD = {strippeddf.iloc[-1]['SD']}")
     st.divider()
     
     st.info(f"""Apparently you have {20 - min_SD_index} games to play before you lose your next valid round which is  \n
