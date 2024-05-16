@@ -1,119 +1,61 @@
-import matplotlib.pyplot as plt
-import pandas as pd
 import streamlit as st
-
-from graphs import histo_100, plot_last_100_results, plot_last_20
-from login_federgolf import login
-from hcpfunctions import loadcoursetable
-
-# Set up the sidebar.  -  SIDEBAR ----------- SIDEBAR ------------ SIDEBAR OPTIONS
-st.sidebar.title("Your FederGolf Companion")
-st.sidebar.caption("By Zac")
-st.sidebar.write("Please select an option from the sidebar.")
-
-
-# Define a function to display the login form.   ------------------ LOGIN WINDOW 
-def display_login_form():
-    st.title("Login to Load Your F.I.G. Results")
-    st.write("Please enter your username and password to dowload Your Results")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    submit_button = st.button("Login")
-    return username, password, submit_button
-
-
-# Define a function to handle logout
-def handle_logout():
-    st.sidebar.write("---")
-    logout_button = st.sidebar.button("Logout")
-    if logout_button:
-        st.session_state.pop("df", None)
-        st.experimental_rerun()
-
-
-# Main app logic.   ------ MAIN APP LOGIC --- HANDLING OF THE MENU
-def main():
-    selected_option = st.sidebar.selectbox(
-        "Select an option",
-        [
-            "Handicap Visualizer",
-            "HCP Manager",
-        ],
-    )
-
-    # Check if the user has already logged in
-    if "df" not in st.session_state:
-        username, password, submit_button = display_login_form()
-        login_attempt = False
-
-        if submit_button:
-            login_attempt, df = login(username, password)
-
-            if login_attempt:
-                st.session_state["df"] = df
-                st.experimental_rerun()
-            else:
-                st.write(
-                    "Please enter both username and password. Something went wrong."
-                )
-    else:
-        if selected_option == "Handicap Visualizer":
-            # User has already logged in, display the handicap visualizer
-            fig_companion(st.session_state.df)
-
-            # Add a logout button in the sidebar
-            handle_logout()
-
-        else:
-            if selected_option == "HCP Manager":
-                # User has already logged in, display the handicap visualizer
-                loadcoursetable(st.session_state.df)
-                # Add a logout button in the sidebar
-                handle_logout()
-
-            pass
-
-# ------------- Visualization Page ------ F.I.G. Session -----------
-
-def fig_companion(dff):
+def loadcoursetable(dff):
     import pandas as pd
+    import numpy as np
 
     df = pd.DataFrame(dff)
+    
+    # Filter the DataFrame to select the first 20 elements where 'SD' is not NaN
+    filtered_df = df.dropna(subset=['SD']).head(20)
     relevant_columns = ['Date_String', 'Gara', 'Stbl', 'AGS', 'SD', 'Index Nuovo']
-    strippeddf = df[relevant_columns].copy()
+    strippeddf = filtered_df[relevant_columns].copy()
+    
+    # Reset the index of strippeddf
+    strippeddf = strippeddf.reset_index(drop=True)
+    
+    #doing the same in one line
+    #best_8 = strippeddf.nlargest(8, 'Stbl')
+    best_8 = strippeddf.nlargest(8, 'SD')
+    worst_8 = strippeddf.nsmallest(8, 'SD')
+    
+    min_SD_index = best_8['SD'].idxmin()
+    worstofbest = best_8.loc[min_SD_index]
+    
+    element_number = strippeddf.index[strippeddf.eq(worstofbest).all(axis=1)][0]
+    nextgoodone = strippeddf.iloc[(min_SD_index-1)]
 
-    st.title("Official FederGolf Results")
+    
+    strippeddf = strippeddf.rename(columns={'Index Nuovo': 'New EGA'})
+    strippeddf = strippeddf.rename(columns={'Date_String': 'Date'})
+    # --------- PAGE LAYOUT
+    
+    st.title("Handicap Manager")
     st.divider()
 
     current_handicap = df["Index Nuovo"][0]
     best_handicap = df["Index Nuovo"].min()
     st.subheader(f"Tesserato {df['Tesserato'][0]}")
-    st.subheader(
-        f"Your Current HCP is: {current_handicap} - Best handicap: {best_handicap}"
-    )
     
-    st.divider()
-
-    st.header("Last 20 results")
-    plot_last_20(df)
-    
+    st.success(f"Your Current HCP is: {current_handicap} - Best handicap: {best_handicap}", icon="⛳️",)
+    st.info(f"Your Next EXPIRING Round is" )
+    st.subheader(f" {strippeddf.iloc[-1]['Gara']}")
+    st.subheader(f"Date: {strippeddf.iloc[-1]['Date']} - Stableford = {strippeddf.iloc[-1]['Stbl']} - SD = {strippeddf.iloc[-1]['Stbl']}")
     st.divider()
     
-    st.header("Last 100 Rounds - Strokes Taken - Histogram")
-    histo_100(dff)
-    
-    st.divider()
-    
-    st.header("Last 100 Rounds - HCP Graph")
-    plot_last_100_results(df)
-    
-    st.divider()
-
-    st.subheader("Last 100 Rounds - Meaningful Data [Downloadable CSV]")
-    #st.write(st.write(st.session_state.df))
+    st.info(f"""Apparently you have {20 - min_SD_index} games to play before you lose your next valid round which is  \n
+    	{worst_8.iloc[-1]['Gara']} - Stbl = {worst_8.iloc[-1]['Stbl']} - SD = {worst_8.iloc[-1]['SD']}""")
+ 
+    st.subheader("Last 20 VALID Rounds")
+    st.write("You can sort the table by clicking on the column name to  \n ... in case you want to what troubles are you running into, in your golfing future ...")
     st.write(strippeddf)
-
-# ------------------------------------------------
-
-if __name__ == "__main__":
-    main()
+    
+    #st.write(st.write(st.session_state.df))
+    
+    st.divider()
+    st.subheader("Last 8 Valid Rounds (scorewise))")
+    st.write(worst_8)
+    
+    '''
+    st.write(worstofbest)
+    st.write(element_number)
+    '''
