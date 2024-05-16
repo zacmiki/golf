@@ -5,7 +5,7 @@ import streamlit as st
 from scipy.stats import norm
 
 
-def grapr_last_n(dff, n, plot_type):
+def graph_last_n(dff, n, plot_type):
     df = pd.DataFrame(dff)
 
     # Create a figure and axis object
