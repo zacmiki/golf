@@ -149,6 +149,26 @@ def extract_data():
 
     response = requests.get(url, headers=request_headers)
 
+    # Get the info from the html for the new antiforgery token since it changes every time we have to get the new one
+    # ----------------------------------------
+    # Parse the HTML content using BeautifulSoup
+    soup = BeautifulSoup(response.text, "html.parser")
+    antiforgery_token = ""
+
+    # Find all script tags in the HTML
+    script_tags = soup.find_all("script")
+
+    # Loop through each script tag to find antiforgeryToken
+    for script_tag in script_tags:
+        script_content = script_tag.string
+        if script_content and "antiforgeryToken" in script_content:
+            # Extract the value of antiforgeryToken
+            antiforgery_token = script_content.split('value="')[1].split('"')[0]
+            break  # Exit the loop after finding the antiforgeryToken
+
+    # Update to the latest antiforgery token for the next requests
+    st.session_state.antiforgery_token = antiforgery_token
+
     if response.status_code != 200:
         return None
 
@@ -236,20 +256,26 @@ def handicap_request(tee, hcp):
     }
 
     # First request data
-    data1 = {
+    data = {
         "selectedCircolo": selected_circolo,
         "SelectedPercorso": "",
         "hcp": "",
         "__RequestVerificationToken": st.session_state.antiforgery_token,
     }
 
-    print(requests)
-    response1 = requests.post(url, data=data1, headers=headers)
+    response = requests.post(url, data=data, headers=headers)
 
-    print("First Request Response Status Code:", response1.status_code)
-    print("First Request Response Content:", response1.content.decode())
+    # print(selected_circolo)
+    print(st.session_state.session_id)
+    print(st.session_state.request_verification_token)
+    print(st.session_state.antiforgery_token)
+    print(st.session_state.arraffinity)
+    print(st.session_state.arraffinity_same_site)
 
-    if response1.status_code != 200:
+    print("First Request Response Status Code:", response.status_code)
+    print("First Request Response Content:", response.content.decode())
+
+    if response.status_code != 200:
         return False
 
     # Second POST request data
