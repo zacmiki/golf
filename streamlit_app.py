@@ -46,21 +46,21 @@ def main():
         st.session_state.logged_in = False
 
     # Check if the user has already logged in
-    if st.session_state.logged_in == False:
+    if not st.session_state.logged_in:
         username, password, submit_button = display_login_form()
 
         if submit_button:
-            st.session_state.logged_in = login(username, password)
-            print(st.session_state.logged_in)
+            if username and password:
+                st.session_state.logged_in = login(username, password)
 
-            if st.session_state.logged_in == True:
-                st.rerun()
+                if st.session_state.logged_in:
+                    st.rerun()
+                else:
+                    st.error(
+                        "Please enter a valid Username and Password. Something went wrong."
+                    )
             else:
-                st.session_state.df = pd.DataFrame()  # Initialize df
-                st.write(
-                    "Please enter both username and password. Something went wrong."
-                )
-                st.rerun()
+                st.error("Please enter both username and password.")
     else:
         if selected_option == "Data Visualization":
             # Make the request to extract the data
@@ -128,7 +128,7 @@ def fig_companion(df, slider_value):
     plot_gaussian = st.checkbox("Plot Gaussian")
     histo_n(df, plot_gaussian, slider_value)
 
-    st.subheader("Last Rounds - All Your Data [Downloadable CSV]".format(slider_value))
+    st.subheader("Last Rounds - All Your Data [Downloadable CSV]")
     st.markdown(f"Dataframe of the last: {slider_value} rounds:")
     st.write(df.iloc[-slider_value:])
 
