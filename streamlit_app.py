@@ -82,7 +82,7 @@ def main():
 
             # User has already logged in, display the handicap visualizer
             loadcoursetable(st.session_state.df)
-            st.write(handicap_request(tee="Gialli", hcp=18))
+            handicap_request(tee="Gialli", hcp=18)
 
             # Add a logout button in the sidebar
             handle_logout()

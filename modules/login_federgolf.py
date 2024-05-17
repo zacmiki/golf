@@ -225,7 +225,7 @@ def handicap_request(tee, hcp):
     response = requests.get(url, headers=headers)
 
     print("First Request Response Status Code:", response.status_code)
-    print("First Request Response Content:", response.content.decode())
+    # print("First Request Response Content:", response.content.decode())
 
     if response.status_code != 200:
         return False
@@ -304,14 +304,6 @@ def handicap_request(tee, hcp):
         "__RequestVerificationToken": {st.session_state.antiforgery_token},
     }
 
-    print(selected_circolo)
-    print(selected_percorso)
-    print(st.session_state.session_id)
-    print(st.session_state.request_verification_token)
-    print(st.session_state.antiforgery_token)
-    print(st.session_state.arraffinity)
-    print(st.session_state.arraffinity_same_site)
-
     # Make the POST request
     response = requests.post(
         "https://areariservata.federgolf.it/CourseHandicapCalc/Calc",
@@ -320,7 +312,7 @@ def handicap_request(tee, hcp):
     )
 
     print("Second Request Response Status Code:", response.status_code)
-    print("Second Request Response Content:", response.content.decode())
+    # print("Second Request Response Content:", response.content.decode())
 
     if response.status_code != 200:
         return None
