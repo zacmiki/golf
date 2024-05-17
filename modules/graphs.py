@@ -12,16 +12,23 @@ def plot_last_n(df, n, plot_type="line"):
     last_n_results = df.iloc[:n]
 
     if plot_type == "scatter":
+        np.random.seed(19680801)
+        colors = np.random.rand(50)
         ax.scatter(
             last_n_results["Date_String"][::-1],
             last_n_results["Index Nuovo"][::-1],
+            s = 150,
+            cmap = colors
         )
+        ax.grid(True)
+        
     elif plot_type == "line":
         ax.plot(
             last_n_results["Date_String"][::-1],
             last_n_results["Index Nuovo"][::-1],
             linestyle="-",
             marker="o",
+            markersize = 10
         )
         ax.fill_between(
             last_n_results["Date_String"][::-1],
@@ -30,25 +37,22 @@ def plot_last_n(df, n, plot_type="line"):
             alpha=0.5,
         )
         ax.grid(True)  # Add grid lines only for line plot
+        
     elif plot_type == "bar":
         ax.bar(last_n_results["Date_String"][::-1], last_n_results["Index Nuovo"][::-1])
-    elif plot_type == "hist":
-        # Determine the number of bins based on the data range and size
-        num_bins = min(10, len(last_n_results))
-        ax.hist(last_n_results["Index Nuovo"][::-1], bins=num_bins)
-
+    
     ax.set_title("EGA Handicap for last {} Rounds".format(n), fontsize=16)
     ax.set_ylabel("EGA", fontsize=16)
-
     ax.minorticks_off()
     ax.tick_params(axis="x", rotation=45)
     ax.tick_params(axis="y", which="both", length=0)  # Remove y-axis ticks
-    ax.set_xticks(range(0, len(last_n_results["Date_String"][::-1]), 2))
-    ax.set_xticklabels(last_n_results["Date_String"][::-1].iloc[::2])
+    ax.set_xticks(range(0, len(last_n_results["Index Nuovo"][::-1]), 2))
+    ax.set_xticklabels(last_n_results["Index Nuovo"][::-1].iloc[::2])
+    
     ax.set_ylim(
-        last_n_results["Index Nuovo"].min() - 0.2,
-        last_n_results["Index Nuovo"].max() + 0.2,
-    )
+         last_n_results["Index Nuovo"].min() - 0.2,
+         last_n_results["Index Nuovo"].max() + 0.2,
+         )
 
     plt.tight_layout()
     st.pyplot(fig)
@@ -94,7 +98,7 @@ def histo_n(df, plot_gaussian=True, num_results=100):
         ax.plot(x_smooth, gaussian_curve, "r--", linewidth=2)
 
     # Add labels and title
-    ax.set_xlabel("Strokes per Round", fontsize=12)
+    ax.set_xlabel("Strokes per Round Distribution", fontsize=12)
     ax.set_ylabel("Frequency", fontsize=12)
     ax.set_title(
         f"Strokes per round in the Last {num_results} FIG Tournaments", fontsize=12
