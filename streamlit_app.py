@@ -84,8 +84,7 @@ def main():
             loadcoursetable(st.session_state.df)
 
             # Make the request with the two possible parameters
-            course_handicap = handicap_request(tee="Giallo", hcp="18")
-            st.markdown(f"Course Handicap: {course_handicap}")
+            handicap_request()
 
             # Add a logout button in the sidebar
             handle_logout()
