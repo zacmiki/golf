@@ -7,7 +7,7 @@ from modules.login_federgolf import extract_data, handicap_request, login
 
 # Set up the sidebar
 st.sidebar.title("Your FederGolf Companion")
-st.sidebar.caption("By Zac")
+st.sidebar.caption("By The Zacs")
 st.sidebar.write("Please select an option from the sidebar.")
 
 
@@ -36,8 +36,8 @@ def main():
     selected_option = st.sidebar.selectbox(
         "Select an option",
         [
-            "Data Visualization",
-            "HCP Manager",
+            "Your Rounds Graphs",
+            "Your Handicap Manager",
         ],
     )
 
@@ -62,7 +62,7 @@ def main():
             else:
                 st.error("Please enter both username and password.")
     else:
-        if selected_option == "Data Visualization":
+        if selected_option == "Your Rounds Graphs":
             # Make the request to extract the data
             if "df" not in st.session_state or st.session_state.df.empty:
                 st.session_state.df = extract_data()
@@ -76,7 +76,7 @@ def main():
             # Add a logout button in the sidebar
             handle_logout()
 
-        elif selected_option == "HCP Manager":
+        elif selected_option == "Your Handicap Manager":
             if "df" not in st.session_state or st.session_state.df.empty:
                 st.session_state.df = extract_data()
 
