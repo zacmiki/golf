@@ -109,8 +109,9 @@ def login(username, password):
     st.session_state.session_id = session_id
 
     # If the third request fails, return False and an empty DataFrame
-    # We check the lenght of the response
-    if response.status_code != 200 or len(response.content) != 11666:
+    # We check the lenght of the respons
+    # if response.status_code != 200 or len(response.content) != 11666:
+    if response.status_code != 200:
         return False
 
     # If all requests are successful, set success to True and extract the data
