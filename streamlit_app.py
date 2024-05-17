@@ -1,9 +1,10 @@
 import pandas as pd
 import streamlit as st
 
+from modules.course_hcp import handicap_request
 from modules.graphs import *
 from modules.hcp_functions import *
-from modules.login_federgolf import extract_data, handicap_request, login
+from modules.login_federgolf import extract_data, login
 
 # Set up the sidebar
 st.sidebar.title("Your FederGolf Companion")
