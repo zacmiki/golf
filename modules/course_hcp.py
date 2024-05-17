@@ -3,6 +3,7 @@ import streamlit as st
 from bs4 import BeautifulSoup
 
 from .hcp_functions import compute_handicap
+from .login_federgolf import generate_headers
 
 
 # Function to perform the additional requests
@@ -89,29 +90,18 @@ def handicap_request():
     # Make the other request for the Percorso
     url = "https://areariservata.federgolf.it/CourseHandicapCalc/Calc"
 
-    headers = {
-        "Host": "areariservata.federgolf.it",
-        "Cookie": f"ASP.NET_SessionId={st.session_state.session_id}; __RequestVerificationToken={st.session_state.request_verification_token}; ARRAffinity={st.session_state.arraffinity}; ARRAffinitySameSite={st.session_state.arraffinity_same_site}",
-        "Content-Length": "260",
-        "Cache-Control": "max-age=0",
-        "Sec-Ch-Ua": '"Not-A.Brand";v="99", "Chromium";v="124"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": '"macOS"',
-        "Upgrade-Insecure-Requests": "1",
-        "Origin": "https://areariservata.federgolf.it",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.118 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "Sec-Fetch-Site": "same-origin",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-User": "?1",
-        "Sec-Fetch-Dest": "document",
-        "Referer": "https://areariservata.federgolf.it/CourseHandicapCalc/Index",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
-        "Priority": "u=0, i",
-        "Connection": "close",
+    cookies = {
+        "ASP.NET_SessionId": st.session_state.session_id,
+        "__RequestVerificationToken": st.session_state.request_verification_token,
+        "ARRAffinity": st.session_state.arraffinity,
+        "ARRAffinitySameSite": st.session_state.arraffinity_same_site,
     }
+
+    headers = generate_headers(
+        cookies=cookies,
+        referer="https://areariservata.federgolf.it/CourseHandicapCalc/Index",
+        content_length=260,
+    )
 
     data = {
         "selectedCircolo": selected_circolo_value,
@@ -124,7 +114,6 @@ def handicap_request():
     response = requests.post(url, headers=headers, data=data)
 
     if selected_circolo_value:
-        # Get the soup and select the Percorso
         soup = BeautifulSoup(response.text, "html.parser")
         course_options = {}
         course_select = soup.select("#ddlPercorso option")
@@ -133,50 +122,26 @@ def handicap_request():
             value = option["value"]
             course_options[name] = value
 
-        # Dropdown for selecting the course
         selected_course = st.selectbox(
             "Select Course", options=list(course_options.keys())
         )
 
-        # Getting the value based on the selected course name
         selected_course_value = course_options[selected_course]
-
-        # Dropdown for Giallo and Rosso
         tee_color = st.selectbox(
             "Select Tee Color",
             options=["Bianco", "Giallo", "Verde", "Blu", "Rosso", "Arancio"],
         )
 
-        # Text field for handicap
         handicap = st.text_input("Enter Handicap")
 
-        # Button to trigger the request
         if st.button("Compute Handicap"):
             url = "https://areariservata.federgolf.it/CourseHandicapCalc/Calc"
 
-            headers = {
-                "Host": "areariservata.federgolf.it",
-                "Cookie": f"ASP.NET_SessionId={st.session_state.session_id}; __RequestVerificationToken={st.session_state.request_verification_token}; ARRAffinity={st.session_state.arraffinity}; ARRAffinitySameSite={st.session_state.arraffinity_same_site}",
-                "Content-Length": "260",
-                "Cache-Control": "max-age=0",
-                "Sec-Ch-Ua": '"Not-A.Brand";v="99", "Chromium";v="124"',
-                "Sec-Ch-Ua-Mobile": "?0",
-                "Sec-Ch-Ua-Platform": '"macOS"',
-                "Upgrade-Insecure-Requests": "1",
-                "Origin": "https://areariservata.federgolf.it",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.118 Safari/537.36",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-                "Sec-Fetch-Site": "same-origin",
-                "Sec-Fetch-Mode": "navigate",
-                "Sec-Fetch-User": "?1",
-                "Sec-Fetch-Dest": "document",
-                "Referer": "https://areariservata.federgolf.it/CourseHandicapCalc/Index",
-                "Accept-Encoding": "gzip, deflate, br",
-                "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
-                "Priority": "u=0, i",
-                "Connection": "close",
-            }
+            headers = generate_headers(
+                cookies=cookies,
+                referer="https://areariservata.federgolf.it/CourseHandicapCalc/Index",
+                content_length=260,
+            )
 
             data = {
                 "selectedCircolo": selected_circolo_value,
@@ -188,31 +153,15 @@ def handicap_request():
 
             response = requests.post(url, headers=headers, data=data)
 
-            # print("Second Request Response Status Code:", response.status_code)
-            # print("Second Request Response Content:", response.content.decode())
-
-            # if response.status_code != 200:
-            #     return None
-
-            # Get course handicap
             course_handicap = None
-
-            # Parse the HTML content
             soup = BeautifulSoup(response.text, "html.parser")
-
-            # Find the table by its id
             table = soup.find("table", id="risultatiHCP")
-
-            # Get all rows in the tbody
             rows = table.find_all("tr")
 
-            # Loop through the rows to find the Course Handicap
             for row in rows:
                 columns = row.find_all("td")
                 if columns:
-                    course_handicap = columns[4].get_text(
-                        strip=True
-                    )  # 5th column is the Course Handicap
+                    course_handicap = columns[4].get_text(strip=True)
 
             st.markdown(f"Course Handicap: {course_handicap}")
 
