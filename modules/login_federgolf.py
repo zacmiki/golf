@@ -277,12 +277,6 @@ def handicap_request():
         value = option["value"]
         circolo_options[name] = value
 
-    # Extract Percorso options (if available)
-    percorso_options = [
-        option.text.strip() for option in soup.select("#ddlPercorso option")
-    ]
-
-    # Dropdown for circolo_option
     selected_circolo = st.selectbox(
         "Select Circolo Option", options=list(circolo_options.keys())
     )
@@ -290,14 +284,63 @@ def handicap_request():
     # Getting the value based on the selected name
     selected_circolo_value = circolo_options[selected_circolo]
 
-    # Dropdown for percorso_options
-    # selected_percorso = st.selectbox("Select Percorso Option", options=percorso_options)
+    # Make the other request for the Percorso
+    url = "https://areariservata.federgolf.it/CourseHandicapCalc/Calc"
 
-    # I need to add the Percorso in the future
-    selected_percorso = "c409a93b-af1b-43c6-b735-00bf5d612885"
+    headers = {
+        "Host": "areariservata.federgolf.it",
+        "Cookie": f"ASP.NET_SessionId={st.session_state.session_id}; __RequestVerificationToken={st.session_state.request_verification_token}; ARRAffinity={st.session_state.arraffinity}; ARRAffinitySameSite={st.session_state.arraffinity_same_site}",
+        "Content-Length": "260",
+        "Cache-Control": "max-age=0",
+        "Sec-Ch-Ua": '"Not-A.Brand";v="99", "Chromium";v="124"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"macOS"',
+        "Upgrade-Insecure-Requests": "1",
+        "Origin": "https://areariservata.federgolf.it",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.118 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Sec-Fetch-Site": "same-origin",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-User": "?1",
+        "Sec-Fetch-Dest": "document",
+        "Referer": "https://areariservata.federgolf.it/CourseHandicapCalc/Index",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
+        "Priority": "u=0, i",
+        "Connection": "close",
+    }
+
+    data = {
+        "selectedCircolo": selected_circolo_value,
+        "SelectedPercorso": "",
+        "tee": "",
+        "hcp": "",
+        "__RequestVerificationToken": st.session_state.antiforgery_token,
+    }
+
+    response = requests.post(url, headers=headers, data=data)
+
+    # Get the soup and select the Percorso
+    soup = BeautifulSoup(response.text, "html.parser")
+    course_options = {}
+    course_select = soup.select("#ddlPercorso option")
+    for option in course_select:
+        name = option.text.strip()
+        value = option["value"]
+        course_options[name] = value
+
+    # Dropdown for selecting the course
+    selected_course = st.selectbox("Select Course", options=list(course_options.keys()))
+
+    # Getting the value based on the selected course name
+    selected_course_value = course_options[selected_course]
 
     # Dropdown for Giallo and Rosso
-    tee_color = st.selectbox("Select Tee Color", options=["Giallo", "Rosso"])
+    tee_color = st.selectbox(
+        "Select Tee Color",
+        options=["Bianco", "Giallo", "Verde", "Blu", "Rosso", "Arancio"],
+    )
 
     # Text field for handicap
     handicap = st.text_input("Enter Handicap")
@@ -332,7 +375,7 @@ def handicap_request():
 
         data = {
             "selectedCircolo": selected_circolo_value,
-            "SelectedPercorso": selected_percorso,
+            "SelectedPercorso": selected_course_value,
             "tee": tee_color,
             "hcp": handicap,
             "__RequestVerificationToken": st.session_state.antiforgery_token,
