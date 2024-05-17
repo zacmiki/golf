@@ -1,3 +1,5 @@
+from typing import Union
+
 import pandas as pd
 import requests
 import streamlit as st
@@ -5,7 +7,7 @@ from bs4 import BeautifulSoup
 
 
 # Login and call the function to extract data
-def login(username, password):
+def login(username: str, password: str) -> bool:
     # Make the first request
     # ============================================================================================
     url = "https://areariservata.federgolf.it/"
@@ -119,7 +121,7 @@ def login(username, password):
 
 
 # Extract data in the correct format
-def extract_data():
+def extract_data() -> Union[pd.DataFrame, None]:
     # Make the third request
     # ============================================================================================
     url = "https://areariservata.federgolf.it/Risultati/ShowGrid"

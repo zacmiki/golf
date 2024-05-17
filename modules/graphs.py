@@ -7,7 +7,7 @@ from scipy.stats import norm
 
 # Cache this result to avoid recomputing it every time
 @st.cache_data
-def plot_last_n(df, n, plot_type="line"):
+def plot_last_n(df: pd.DataFrame, n: int, plot_type="line") -> None:
     fig, ax = plt.subplots(figsize=(12, 7))
     last_n_results = df.iloc[:n]
 
@@ -17,18 +17,18 @@ def plot_last_n(df, n, plot_type="line"):
         ax.scatter(
             last_n_results["Date_String"][::-1],
             last_n_results["Index Nuovo"][::-1],
-            s = 150,
-            cmap = colors
+            s=150,
+            cmap=colors,
         )
         ax.grid(True)
-        
+
     elif plot_type == "line":
         ax.plot(
             last_n_results["Date_String"][::-1],
             last_n_results["Index Nuovo"][::-1],
             linestyle="-",
             marker="o",
-            markersize = 10
+            markersize=10,
         )
         ax.fill_between(
             last_n_results["Date_String"][::-1],
@@ -37,10 +37,10 @@ def plot_last_n(df, n, plot_type="line"):
             alpha=0.5,
         )
         ax.grid(True)  # Add grid lines only for line plot
-        
+
     elif plot_type == "bar":
         ax.bar(last_n_results["Date_String"][::-1], last_n_results["Index Nuovo"][::-1])
-    
+
     ax.set_title("EGA Handicap for last {} Rounds".format(n), fontsize=16)
     ax.set_ylabel("EGA", fontsize=16)
     ax.minorticks_off()
@@ -48,11 +48,11 @@ def plot_last_n(df, n, plot_type="line"):
     ax.tick_params(axis="y", which="both", length=0)  # Remove y-axis ticks
     ax.set_xticks(range(0, len(last_n_results["Index Nuovo"][::-1]), 2))
     ax.set_xticklabels(last_n_results["Index Nuovo"][::-1].iloc[::2])
-    
+
     ax.set_ylim(
-         last_n_results["Index Nuovo"].min() - 0.2,
-         last_n_results["Index Nuovo"].max() + 0.2,
-         )
+        last_n_results["Index Nuovo"].min() - 0.2,
+        last_n_results["Index Nuovo"].max() + 0.2,
+    )
 
     plt.tight_layout()
     st.pyplot(fig)
@@ -60,7 +60,7 @@ def plot_last_n(df, n, plot_type="line"):
 
 # ------- Histogram with Gaussian Fit
 @st.cache_data
-def histo_n(df, plot_gaussian=True, num_results=100):
+def histo_n(df, plot_gaussian: bool = True, num_results: int = 100) -> None:
     # Filter out non-finite values (None and zeros) from the DataFrame
     filtered_data = df["AGS"].dropna().replace(0, np.nan).dropna()
 

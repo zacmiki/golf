@@ -6,7 +6,6 @@ from .hcp_functions import compute_handicap
 
 
 # Function to perform the additional requests
-# def handicap_request(selected_percorso, tee, hcp):
 def handicap_request():
     url = "http://areariservata.federgolf.it/CourseHandicapCalc/Index"
     headers = {
