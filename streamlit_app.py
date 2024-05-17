@@ -99,12 +99,11 @@ def fig_companion(df, slider_value):
     plot_type_mapping = {
         "Line Area Plot": "line",
         "Bar Chart": "bar",
-        "Histogram": "hist",
         "Scatter Plot": "scatter",
     }
 
     st.title("Official FederGolf Results")
-    st.write("Hcp Visualizer - and more services still to come ...")
+    st.markdown("Handicap Visualizer ... and more ...")
     st.divider()
 
     current_handicap = df["Index Nuovo"][0]
@@ -126,11 +125,11 @@ def fig_companion(df, slider_value):
     )
 
     # st.header("Strokes in the Last {} Rounds".format(slider_value))
-    st.subheader("Strokes in the Last Rounds")
+    st.subheader(f"Strokes Distribution [Last {slider_value} Rounds]")
     plot_gaussian = st.checkbox("Plot Gaussian")
     histo_n(df, plot_gaussian, slider_value)
 
-    st.subheader("Last Rounds - All Your Data [Downloadable CSV]")
+    st.subheader("Last Rounds Data [Downloadable CSV]")
     st.markdown(f"Dataframe of the last: {slider_value} rounds:")
     st.write(df.iloc[-slider_value:])
 
