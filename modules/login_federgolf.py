@@ -332,3 +332,36 @@ def handicap_request(tee, hcp):
             )  # 5th column is the Course Handicap
 
     return course_handicap
+
+
+# def extract_circolo_percorso(html_content):
+#     # Parse the HTML content
+#     soup = BeautifulSoup(html_content, 'html.parser')
+#
+#     # Extract Circolo options
+#     circolo_options = [option.text.strip() for option in soup.select('#ddlCircolo option')]
+#
+#     # Extract Percorso options (if available)
+#     percorso_options = [option.text.strip() for option in soup.select('#ddlPercorso option')]
+#
+#     return circolo_options, percorso_options
+#
+# def compute_course_handicap(selected_circolo, selected_percorso, handicap_index):
+#     # Add your computation logic here based on the selected Circolo, Percorso, and Handicap Index
+#     # This function should return the computed Course Handicap
+#     course_handicap = ...  # Calculate the Course Handicap
+#     return course_handicap
+#
+# # Example usage
+# html_content = """
+#     Paste the HTML content here
+# """
+#
+# circolo_options, percorso_options = extract_circolo_percorso(html_content)
+# selected_circolo = "ABANO"  # Example selected Circolo
+# selected_percorso = "Percorso Name"  # Example selected Percorso
+# handicap_index = 18  # Example Handicap Index
+#
+# course_handicap = compute_course_handicap(selected_circolo, selected_percorso, handicap_index)
+# print(f'Course Handicap for {selected_circolo} - {selected_percorso}: {course_handicap}')
+#
