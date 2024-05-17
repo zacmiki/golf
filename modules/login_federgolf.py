@@ -110,8 +110,8 @@ def login(username, password):
 
     # If the third request fails, return False and an empty DataFrame
     # We check the lenght of the respons
-    # if response.status_code != 200 or len(response.content) != 11666:
-    if response.status_code != 200:
+    # 10000 Is a reasonable number below which it should never be since mine is 11666
+    if response.status_code != 200 or len(response.content) < 10000:
         return False
 
     # If all requests are successful, set success to True and extract the data
