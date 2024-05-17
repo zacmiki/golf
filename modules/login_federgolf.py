@@ -224,7 +224,7 @@ def handicap_request(tee, hcp):
 
     response = requests.get(url, headers=headers)
 
-    print("First Request Response Status Code:", response.status_code)
+    # print("First Request Response Status Code:", response.status_code)
     # print("First Request Response Content:", response.content.decode())
 
     if response.status_code != 200:
@@ -266,11 +266,11 @@ def handicap_request(tee, hcp):
 
     ## Second Request
     # _________________________________________________________________________________________________________
+    url = "https://areariservata.federgolf.it/CourseHandicapCalc/Calc"
 
     selected_circolo = "0a68d8fc-4339-4f92-889d-fbc60747d7bb"
     selected_percorso = "c409a93b-af1b-43c6-b735-00bf5d612885"
 
-    # Set the request headers
     headers = {
         "Host": "areariservata.federgolf.it",
         "Cookie": f"ASP.NET_SessionId={st.session_state.session_id}; __RequestVerificationToken={st.session_state.request_verification_token}; ARRAffinity={st.session_state.arraffinity}; ARRAffinitySameSite={st.session_state.arraffinity_same_site}",
@@ -288,33 +288,47 @@ def handicap_request(tee, hcp):
         "Sec-Fetch-Mode": "navigate",
         "Sec-Fetch-User": "?1",
         "Sec-Fetch-Dest": "document",
-        "Referer": "https://areariservata.federgolf.it/CourseHandicapCalc/Calc",
+        "Referer": "https://areariservata.federgolf.it/CourseHandicapCalc/Index",
         "Accept-Encoding": "gzip, deflate, br",
         "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
         "Priority": "u=0, i",
         "Connection": "close",
     }
 
-    # Set the request data
     data = {
         "selectedCircolo": selected_circolo,
         "SelectedPercorso": selected_percorso,
         "tee": tee,
         "hcp": hcp,
-        "__RequestVerificationToken": {st.session_state.antiforgery_token},
+        "__RequestVerificationToken": st.session_state.antiforgery_token,
     }
 
-    # Make the POST request
-    response = requests.post(
-        "https://areariservata.federgolf.it/CourseHandicapCalc/Calc",
-        headers=headers,
-        data=data,
-    )
+    response = requests.post(url, headers=headers, data=data)
 
-    print("Second Request Response Status Code:", response.status_code)
+    # print("Second Request Response Status Code:", response.status_code)
     # print("Second Request Response Content:", response.content.decode())
 
     if response.status_code != 200:
         return None
 
-    return response.content
+    # Get course handicap
+    course_handicap = None
+
+    # Parse the HTML content
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    # Find the table by its id
+    table = soup.find("table", id="risultatiHCP")
+
+    # Get all rows in the tbody
+    rows = table.find_all("tr")
+
+    # Loop through the rows to find the Course Handicap
+    for row in rows:
+        columns = row.find_all("td")
+        if columns:
+            course_handicap = columns[4].get_text(
+                strip=True
+            )  # 5th column is the Course Handicap
+
+    return course_handicap
