@@ -38,8 +38,6 @@ def login(username, password):
     if response.status_code != 200:
         return False
 
-    # print(response.status_code)
-
     # Get the necessaary information for the next requests from the cookies
     # ----------------------------------------
     request_verification_token = response.cookies.get("__RequestVerificationToken")
@@ -147,26 +145,6 @@ def extract_data():
 
     response = requests.get(url, headers=request_headers)
 
-    # Get the info from the html for the new antiforgery token since it changes every time we have to get the new one
-    # ----------------------------------------
-    # Parse the HTML content using BeautifulSoup
-    soup = BeautifulSoup(response.text, "html.parser")
-    antiforgery_token = ""
-
-    # Find all script tags in the HTML
-    script_tags = soup.find_all("script")
-
-    # Loop through each script tag to find antiforgeryToken
-    for script_tag in script_tags:
-        script_content = script_tag.string
-        if script_content and "antiforgeryToken" in script_content:
-            # Extract the value of antiforgeryToken
-            antiforgery_token = script_content.split('value="')[1].split('"')[0]
-            break  # Exit the loop after finding the antiforgeryToken
-
-    # Update to the latest antiforgery token for the next requests
-    st.session_state.antiforgery_token = antiforgery_token
-
     if response.status_code != 200:
         return None
 
@@ -271,7 +249,24 @@ def handicap_request(tee, hcp):
     # Update to the latest antiforgery token for the next requests
     st.session_state.antiforgery_token = antiforgery_token
 
+    # Get the necessaary information for the next requests from the cookies
+    # ----------------------------------------
+    request_verification_token = response.cookies.get("__RequestVerificationToken")
+    st.session_state.request_verification_token = request_verification_token
+
+    arraffinity = response.cookies.get("ARRAffinity")
+    st.session_state.arraffinity = arraffinity
+
+    arraffinity_same_site = response.cookies.get("ARRAffinitySameSite")
+    st.session_state.arraffinity_same_site = arraffinity_same_site
+
+    # Get Session id from the cookies
+    session_id = response.cookies.get("ASP.NET_SessionId", None)
+    st.session_state.session_id = session_id
+
     ## Second Request
+    # _________________________________________________________________________________________________________
+
     selected_circolo = "0a68d8fc-4339-4f92-889d-fbc60747d7bb"
     selected_percorso = "c409a93b-af1b-43c6-b735-00bf5d612885"
 
