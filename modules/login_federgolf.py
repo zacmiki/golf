@@ -6,8 +6,6 @@ from bs4 import BeautifulSoup
 
 # Login and call the function to extract data
 def login(username, password):
-    success = False
-
     # Make the first request
     # ============================================================================================
     url = "https://areariservata.federgolf.it/"
@@ -228,13 +226,60 @@ def extract_data():
 # Function to perform the additional requests
 # def handicap_request(selected_percorso, tee, hcp):
 def handicap_request(tee, hcp):
-    # First POST request
-    selected_circolo = "0a68d8fc-4339-4f92-889d-fbc60747d7bb"
+    url = "http://areariservata.federgolf.it/CourseHandicapCalc/Index"
+    headers = {
+        "Sec-Ch-Ua": '"Not-A.Brand";v="99", "Chromium";v="124"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"macOS"',
+        "Upgrade-Insecure-Requests": "1",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.118 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-User": "?1",
+        "Sec-Fetch-Dest": "document",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
+        "Priority": "u=0, i",
+        "Connection": "close",
+    }
 
-    url = "https://areariservata.federgolf.it/CourseHandicapCalc/Calc"
+    response = requests.get(url, headers=headers)
+
+    print("First Request Response Status Code:", response.status_code)
+    print("First Request Response Content:", response.content.decode())
+
+    if response.status_code != 200:
+        return False
+
+    # Get the info from the html for the new antiforgery token since it changes every time we have to get the new one
+    # ----------------------------------------
+    # Parse the HTML content using BeautifulSoup
+    soup = BeautifulSoup(response.text, "html.parser")
+    antiforgery_token = ""
+    # Find all script tags in the HTML
+    script_tags = soup.find_all("script")
+
+    # Loop through each script tag to find antiforgeryToken
+    for script_tag in script_tags:
+        script_content = script_tag.string
+        if script_content and "antiforgeryToken" in script_content:
+            # Extract the value of antiforgeryToken
+            antiforgery_token = script_content.split('value="')[1].split('"')[0]
+            break  # Exit the loop after finding the antiforgeryToken
+
+    # Update to the latest antiforgery token for the next requests
+    st.session_state.antiforgery_token = antiforgery_token
+
+    ## Second Request
+    selected_circolo = "0a68d8fc-4339-4f92-889d-fbc60747d7bb"
+    selected_percorso = "c409a93b-af1b-43c6-b735-00bf5d612885"
+
+    # Set the request headers
     headers = {
         "Host": "areariservata.federgolf.it",
         "Cookie": f"ASP.NET_SessionId={st.session_state.session_id}; __RequestVerificationToken={st.session_state.request_verification_token}; ARRAffinity={st.session_state.arraffinity}; ARRAffinitySameSite={st.session_state.arraffinity_same_site}",
+        "Content-Length": "260",
         "Cache-Control": "max-age=0",
         "Sec-Ch-Ua": '"Not-A.Brand";v="99", "Chromium";v="124"',
         "Sec-Ch-Ua-Mobile": "?0",
@@ -248,52 +293,41 @@ def handicap_request(tee, hcp):
         "Sec-Fetch-Mode": "navigate",
         "Sec-Fetch-User": "?1",
         "Sec-Fetch-Dest": "document",
-        "Referer": "https://areariservata.federgolf.it/CourseHandicapCalc/Index",
+        "Referer": "https://areariservata.federgolf.it/CourseHandicapCalc/Calc",
         "Accept-Encoding": "gzip, deflate, br",
         "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
         "Priority": "u=0, i",
         "Connection": "close",
     }
 
-    # First request data
+    # Set the request data
     data = {
         "selectedCircolo": selected_circolo,
-        "SelectedPercorso": "",
-        "hcp": "",
-        "__RequestVerificationToken": st.session_state.antiforgery_token,
+        "SelectedPercorso": selected_percorso,
+        "tee": tee,
+        "hcp": hcp,
+        "__RequestVerificationToken": {st.session_state.antiforgery_token},
     }
 
-    response = requests.post(url, data=data, headers=headers)
-
-    # print(selected_circolo)
+    print(selected_circolo)
+    print(selected_percorso)
     print(st.session_state.session_id)
     print(st.session_state.request_verification_token)
     print(st.session_state.antiforgery_token)
     print(st.session_state.arraffinity)
     print(st.session_state.arraffinity_same_site)
 
-    print("First Request Response Status Code:", response.status_code)
-    print("First Request Response Content:", response.content.decode())
+    # Make the POST request
+    response = requests.post(
+        "https://areariservata.federgolf.it/CourseHandicapCalc/Calc",
+        headers=headers,
+        data=data,
+    )
+
+    print("Second Request Response Status Code:", response.status_code)
+    print("Second Request Response Content:", response.content.decode())
 
     if response.status_code != 200:
-        return False
-
-    # Second POST request data
-    selected_percorso = "c409a93b-af1b-43c6-b735-00bf5d612885"
-    data2 = {
-        "selectedCircolo": selected_circolo,
-        "SelectedPercorso": selected_percorso,
-        "tee": tee,
-        "hcp": hcp,
-        "__RequestVerificationToken": st.session_state.request_verification_token,
-    }
-
-    response2 = requests.post(url, data=data2, headers=headers)
-
-    print("Second Request Response Status Code:", response2.status_code)
-    print("Second Request Response Content:", response2.content.decode())
-
-    if response2.status_code != 200:
         return None
 
-    return response2.content
+    return response.content
