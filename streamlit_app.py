@@ -68,11 +68,7 @@ def main():
             if "df" not in st.session_state or st.session_state.df.empty:
                 st.session_state.df = extract_data()
 
-            # User has already logged in, display the handicap visualizer
-            slider_value = st.sidebar.slider(
-                "Select the number of results:", 1, 100, 20
-            )
-            fig_companion(st.session_state.df, slider_value)
+            fig_companion(st.session_state.df)
 
             # Add a logout button in the sidebar
             handle_logout()
@@ -95,7 +91,7 @@ def main():
 
 
 # ------------- Visualization Page ------ F.I.G. Session -----------
-def fig_companion(df, slider_value):
+def fig_companion(df):
 
     plot_type_mapping = {
         "Line Area Plot": "line",
@@ -115,6 +111,11 @@ def fig_companion(df, slider_value):
             current_handicap, best_handicap
         )
     )
+
+    st.subheader(f" Slider to select the number of results")
+
+    # User has already logged in, display the handicap visualizer
+    slider_value = st.slider("Select the number of results:", 1, 100, 20)
 
     st.subheader("Plot of your Handicap progression")
     st.markdown(f"Showing last {slider_value} results:")
