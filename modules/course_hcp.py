@@ -65,7 +65,7 @@ def handicap_request():
     session_id = response.cookies.get("ASP.NET_SessionId", None)
     st.session_state.session_id = session_id
 
-    st.subheader("Playing Handicap Calculator")
+    st.subheader("Handicap Calculator")
 
     # Get the course with the soup from before
     # Parse the HTML content
