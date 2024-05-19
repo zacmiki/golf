@@ -31,17 +31,17 @@ def loadcoursetable(dff):
     strippeddf = strippeddf.rename(columns={"Date_String": "Date"})
     # --------- PAGE LAYOUT
 
-    st.title("Handicap Manager")
+    st.title("⛳️ Handicap Manager ⛳️")
     st.divider()
 
     current_handicap = df["Index Nuovo"][0]
     best_handicap = df["Index Nuovo"].min()
-    st.subheader(f"Tesserato {df['Tesserato'][0]}")
-
+    
     st.success(
-        f"Your Current HCP is: {current_handicap} - Best handicap: {best_handicap}",
-        icon="⛳️",
+    f"\n\n#### 🏌️ Tesserato {df['Tesserato'][0]}" +
+    f"\n\n#### ⛳️ Current HCP: {current_handicap}  ⛳️",
     )
+    
     st.info(f"Your Next EXPIRING Round is")
     st.markdown(f"##### {strippeddf.iloc[-1]['Gara']}")
     st.markdown(

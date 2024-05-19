@@ -37,7 +37,7 @@ def main():
     selected_option = st.sidebar.selectbox(
         "Select an option",
         [
-            "Your Rounds Graphs",
+            "Your Official Rounds",
             "Your Handicap Manager",
         ],
     )
@@ -63,7 +63,7 @@ def main():
             else:
                 st.error("Please enter both username and password.")
     else:
-        if selected_option == "Your Rounds Graphs":
+        if selected_option == "Your Official Rounds":
             # Make the request to extract the data
             if "df" not in st.session_state or st.session_state.df.empty:
                 st.session_state.df = extract_data()
@@ -98,27 +98,31 @@ def fig_companion(df):
         "Bar Chart": "bar",
         "Scatter Plot": "scatter",
     }
+    
+    relevant_columns = ["Date_String", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
+    strippeddf = df[relevant_columns].copy()
+    strippeddf = strippeddf.rename(columns={"Index Nuovo": "New EGA"})
+    strippeddf = strippeddf.rename(columns={"Date_String": "Date"})
 
-    st.title("Official FederGolf Results")
-    st.markdown("Handicap Visualizer ... and more ...")
+    st.title(" ⛳️ Official FederGolf Results ⛳️")
     st.divider()
 
     current_handicap = df["Index Nuovo"][0]
     best_handicap = df["Index Nuovo"].min()
-    st.subheader(f"Tesserato {df['Tesserato'][0]}")
-    st.markdown(
-        "Your Current HCP is: {} - Best handicap: {}".format(
-            current_handicap, best_handicap
-        )
+    
+    st.markdown(f"##### Tesserato 🏌️ {df['Tesserato'][0]}")
+    st.success(
+        f"Your Current HCP is: {current_handicap} - Best handicap: {best_handicap}",
+        icon="🏌️",
     )
-
-    st.subheader(f" Slider to select the number of results")
+    st.markdown(f"#### Slider to select the number of results")
 
     # User has already logged in, display the handicap visualizer
-    slider_value = st.slider("Select the number of results:", 1, 100, 20)
+    #slider_value = st.slider("Select the number of results:", 1, 100, 20)
+    slider_value = st.slider("", 1, 100, 20)
 
-    st.subheader("Plot of your Handicap progression")
-    st.markdown(f"Showing last {slider_value} results:")
+    #st.subheader("Plot of your Handicap progression")
+    st.markdown(f"##### Your handicap progression: last {slider_value} results:")
     plot_type_options = list(plot_type_mapping.keys())
     selected_plot_type = st.selectbox("Choose a plot type", plot_type_options)
 
@@ -131,9 +135,11 @@ def fig_companion(df):
     plot_gaussian = st.checkbox("Plot Gaussian")
     histo_n(df, plot_gaussian, slider_value)
 
-    st.subheader("Last Rounds Data [Downloadable CSV]")
-    st.markdown(f"Dataframe of the last: {slider_value} rounds:")
-    st.write(df.iloc[-slider_value:])
+    #st.subheader("Last Rounds Data [Downloadable CSV]")
+    st.markdown(f"### Detail of the last {slider_value} rounds:")
+    
+    #st.write(df.iloc[:slider_value])
+    st.write(strippeddf.iloc[:slider_value])
 
 
 if __name__ == "__main__":
