@@ -94,7 +94,7 @@ def main():
 
 # Set up the sidebar
 st.sidebar.title("Your FederGolf Companion")
-st.sidebar.caption("By The Zacs")
+st.sidebar.caption("By Mic&Jac Zac")
 st.sidebar.write("Please select an option from the sidebar.")
 
 

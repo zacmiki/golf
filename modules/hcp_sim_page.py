@@ -15,8 +15,8 @@ def hcp_sim():
     # best_handicap = st.session_state.df["Index Nuovo"].min()
 
     st.success(
-        f"\n\n#### 🏌️ Tesserato {st.session_state.df['Tesserato'][0]}"
-        + f"\n\n#### ⛳️ Current HCP: {current_handicap}  ⛳️",
+        f"\n\n##### 🏌️ Tesserato {st.session_state.df['Tesserato'][0]}"
+        + f"\n\n##### ⛳️ Current HCP: {current_handicap}  ⛳️",
     )
 
     # Playing handicap set to none
@@ -31,10 +31,18 @@ def hcp_sim():
         sr, cr, per_percorso = get_course_value(get_allcourses())
 
         new_sd, hcp_simulato = new_hcp(sr, cr, per_percorso)
+        
+        st.info(
+        f"\n\n##### Nuovo Handicap Calcolato: {hcp_simulato: .2f}"
+        + f"\n\n##### Nuovo SD Calcolato: {new_sd: .2f}",
+        )
+        
+        #st.markdown(f"Handicap Simulato: {hcp_simulato}")
 
-        st.markdown(f"Handicap Simulato: {hcp_simulato}")
-
-        st.markdown(f"Plot last 20 work in progress")
+        st.success(
+        f"\n\n#### EGA Plot - 20 results plus new projected value"
+        )
+        
         # Last 20 as an example
         plot_last_n(20, plot_type="line", new_handicap=hcp_simulato)
 
