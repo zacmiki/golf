@@ -1,9 +1,10 @@
 # Improving the README for Handicap Visualizer App
 
 ### Access the App
->  Click the button below to access the Handicap Visualizer App
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://yrxtazef7r7evpwecdey78.streamlit.app/)
+> Click the button below to access the Handicap Visualizer App
+
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://federgolfstats.streamlit.app/)
 
 ### Installation
 
