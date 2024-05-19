@@ -1,4 +1,4 @@
-timport streamlit as st
+import streamlit as st
 
 
 def loadcoursetable(dff):
@@ -63,10 +63,15 @@ def loadcoursetable(dff):
 
     st.divider()
     st.subheader("Last 8 Valid Rounds (scorewise))")
-    st.write(best_8)
-"""
+    st.write(worst_8)
+
+    """
+    st.write(worstofbest)
+    st.write(element_number)
+    """
+
+
 def compute_handicap(
     course_handicap, selected_circolo_value, selected_course_value, tee_color, handicap
 ):
     pass
-"""
