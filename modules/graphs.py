@@ -66,10 +66,16 @@ def plot_last_n(n: int, plot_type="line", new_handicap=None) -> None:
     last_n_results = st.session_state.df.iloc[:n]
 
     if plot_type == "scatter":
+        # Normalize the sizes for the scatter plot
+        y_values = last_n_results["Index Nuovo"][::-1]
+        sizes = (y_values - y_values.min()) / (
+            y_values.max() - y_values.min()
+        ) * 1000 + 50  # Example scaling
+
         ax.scatter(
             last_n_results["Date_String"][::-1],
-            last_n_results["Index Nuovo"][::-1],
-            s=150,
+            y_values,
+            s=sizes,
             c="skyblue",
         )
         ax.grid(True)
@@ -91,7 +97,12 @@ def plot_last_n(n: int, plot_type="line", new_handicap=None) -> None:
         ax.grid(True)  # Add grid lines only for line plot
 
     elif plot_type == "bar":
-        ax.bar(last_n_results["Date_String"][::-1], last_n_results["Index Nuovo"][::-1])
+        ax.bar(
+            last_n_results["Date_String"][::-1],
+            last_n_results["Index Nuovo"][::-1],
+            color="skyblue",
+            alpha=0.5,
+        )
 
     if new_handicap is not None:
         # Add the new handicap to the plot

@@ -30,13 +30,13 @@ def hcp_sim():
         # Get all of the courses
         sr, cr, per_percorso = get_course_value(get_allcourses())
 
-        # Get punti_stbl from user
-        punti_stbl = 40
-
-        new_sd, hcp_simulato = new_hcp(punti_stbl, sr, cr, per_percorso)
+        new_sd, hcp_simulato = new_hcp(sr, cr, per_percorso)
 
         st.markdown(f"Handicap Simulato: {hcp_simulato}")
-        plot_last_n(df, n, plot_type="line", new_handicap=hcp_simulato)
+
+        st.markdown(f"Plot last 20 work in progress")
+        # Last 20 as an example
+        plot_last_n(20, plot_type="line", new_handicap=hcp_simulato)
 
 
 # This needs to be fixed
@@ -46,9 +46,11 @@ def get_course_value(all_courses):
         & (all_courses["Percorso"] == st.session_state.percorso)
     ]
 
+    st.write(filtered_df)
+
     if not filtered_df.empty:
-        cr = filtered_df.iloc[0]["CR Gialli Uomini"]
-        sr = filtered_df.iloc[0]["Slope Gialli Uomini"]
+        cr = filtered_df.iloc[0]["CR Giallo Uomini"]
+        sr = filtered_df.iloc[0]["Slope Giallo Uomini"]
         par_percorso = filtered_df.iloc[0]["PAR"]
 
         return sr, cr, par_percorso
@@ -61,15 +63,18 @@ def get_course_value(all_courses):
 
 
 # New HCP Calculator --------
-def new_hcp(punti_stbl, sr_percorso, cr_percorso, par_percorso):
+def new_hcp(sr_percorso, cr_percorso, par_percorso):
 
     filtered_df = st.session_state.df.dropna(subset=["SD"]).head(20)
     valid_results_SD = filtered_df["SD"].values
 
     migliori_8 = np.sort(valid_results_SD)[:8]
 
-    new_sd = (113 / sr_percorso) * (
-        par_percorso + st.session_state.playing_hcp - (punti_stbl - 36) - cr_percorso
+    new_sd = (113 / float(sr_percorso)) * (
+        int(par_percorso)
+        + int(st.session_state.playing_hcp)
+        - (int(st.session_state.punti_stbl) - 36)
+        - float(cr_percorso)
     )
 
     migliori_8 = np.append(migliori_8, new_sd)

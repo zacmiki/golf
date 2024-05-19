@@ -131,6 +131,9 @@ def handicap_request():
 
         handicap = st.session_state.df["Index Nuovo"][0]
 
+        # Get punti_stbl from user
+        st.session_state.punti_stbl = st.text_input("Entrai il Punteggion Stableford")
+
         if st.button("Compute Handicap"):
             url = "https://areariservata.federgolf.it/CourseHandicapCalc/Calc"
 
@@ -160,12 +163,19 @@ def handicap_request():
                 if columns:
                     playing_hcp = columns[4].get_text(strip=True)
 
+                    # Find the index of the first space after the dash
+
+            # Get the index of the dash
+            index = selected_course.index("-") + 2
+
             # st.markdown(f"Course Handicap: {course_handicap}")
-            st.session_state.circolo = selected_circolo_value
-            st.session_state.percorso = selected_course_value
+            st.session_state.circolo = selected_circolo
+            # Extract only the second part after the dash
+            st.session_state.percorso = selected_course[index:]
             st.session_state.playing_hcp = playing_hcp
 
 
+@st.cache_data
 def get_allcourses():
     # GET THE TABLE OF ALL COURSES OFFICIALLY REGISTERED TO FEDERGOLF
     # returns - Percorso Par / SR / CR /
@@ -233,11 +243,11 @@ def get_allcourses():
             length = len(allcourses_df)
             allcourses_df.loc[length] = individual_row_data
         else:
-            print(f"I had to Skip {skippedrows} row")
+            # print(f"I had to Skip {skippedrows} row")
             skippedrows += 1
             continue
 
-    st.write(f"Created and loaded a dataframe made of {len(allcourses_df)} courses")
+    # st.write(f"Created and loaded a dataframe made of {len(allcourses_df)} courses")
     # st.session_state.allcourses_df = allcourses_df
 
     return allcourses_df
