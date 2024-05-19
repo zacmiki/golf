@@ -15,33 +15,33 @@ def loadcoursetable(dff):
     # Reset the index of strippeddf
     strippeddf = strippeddf.reset_index(drop=True)
 
-    #worst_8 = strippeddf.nsmallest(8, "SD")
+    # worst_8 = strippeddf.nsmallest(8, "SD")
     best_8 = strippeddf.nsmallest(8, "SD")
-    
+
     # Keep the original indices
     best_8_indices = best_8.index
-    
+
     # Find the maximum index value from the best_8 indices
     max_index = best_8_indices.max()
-    
+
     # Retrieve the corresponding row in the best_8 DataFrame
     highest_indexed_element = best_8.loc[max_index]
-    
+
     strippeddf = strippeddf.rename(columns={"Index Nuovo": "New EGA"})
     strippeddf = strippeddf.rename(columns={"Date_String": "Date"})
     # --------- PAGE LAYOUT
 
-    st.title("⛳️ Handicap Manager ⛳️")
+    st.title("Handicap Manager ⛳️")
     st.divider()
 
     current_handicap = df["Index Nuovo"][0]
     best_handicap = df["Index Nuovo"].min()
-    
+
     st.success(
-    f"\n\n#### 🏌️ Tesserato {df['Tesserato'][0]}" +
-    f"\n\n#### ⛳️ Current HCP: {current_handicap}  ⛳️",
+        f"\n\n#### 🏌️ Tesserato {df['Tesserato'][0]}"
+        + f"\n\n#### ⛳️ Current HCP: {current_handicap}  ⛳️",
     )
-    
+
     st.info(f"Your Next EXPIRING Round is")
     st.markdown(f"##### {strippeddf.iloc[-1]['Gara']}")
     st.markdown(

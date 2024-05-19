@@ -1,4 +1,3 @@
-import pandas as pd
 import streamlit as st
 
 from modules.course_hcp import handicap_request
@@ -104,7 +103,7 @@ def fig_companion(df):
     strippeddf = strippeddf.rename(columns={"Index Nuovo": "New EGA"})
     strippeddf = strippeddf.rename(columns={"Date_String": "Date"})
 
-    st.title("⛳️ Official FederGolf Results ⛳️")
+    st.title("Official FederGolf Results ⛳️")
     st.divider()
 
     current_handicap = df["Index Nuovo"][0]
