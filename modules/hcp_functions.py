@@ -63,7 +63,7 @@ def loadcoursetable(dff):
 
     st.divider()
     st.subheader("Last 8 Valid Rounds (scorewise))")
-    st.write(worst_8)
+    st.write(best_8)
 
     """
     st.write(worstofbest)
