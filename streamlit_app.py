@@ -10,7 +10,6 @@ st.sidebar.title("Your FederGolf Companion")
 st.sidebar.caption("By The Zacs")
 st.sidebar.write("Please select an option from the sidebar.")
 
-
 # Define a function to display the login form
 def display_login_form():
     st.title("Login to Load Your F.I.G. Results")
@@ -20,7 +19,6 @@ def display_login_form():
     submit_button = st.button("Login")
     return username, password, submit_button
 
-
 # Define a function to handle logout
 def handle_logout():
     st.sidebar.write("---")
@@ -29,7 +27,6 @@ def handle_logout():
         st.session_state.pop("logged_in", None)
         st.session_state.pop("df", None)
         st.rerun()
-
 
 # Main app logic
 def main():
@@ -88,7 +85,6 @@ def main():
         else:
             pass
 
-
 # ------------- Visualization Page ------ F.I.G. Session -----------
 def fig_companion(df):
 
@@ -143,6 +139,18 @@ def fig_companion(df):
     # st.write(df.iloc[:slider_value])
     st.write(strippeddf.iloc[:slider_value])
 
-
 if __name__ == "__main__":
     main()
+
+# Add Buy Me a Coffee button to the sidebar
+st.sidebar.divider()
+st.sidebar.markdown(
+    """
+    <a href="https://buymeacoffee.com/miczac?l=it" target="_blank">
+        <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=YourUsername&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff">
+    </a>
+    """,
+    unsafe_allow_html=True,
+)
+
+
