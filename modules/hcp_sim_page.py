@@ -46,8 +46,6 @@ def get_course_value(all_courses):
         & (all_courses["Percorso"] == st.session_state.percorso)
     ]
 
-    st.write(filtered_df)
-
     if not filtered_df.empty:
         cr = filtered_df.iloc[0]["CR Giallo Uomini"]
         sr = filtered_df.iloc[0]["Slope Giallo Uomini"]
