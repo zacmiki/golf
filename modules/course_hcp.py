@@ -1,8 +1,8 @@
+import pandas as pd
 import requests
 import streamlit as st
 from bs4 import BeautifulSoup
 
-from .hcp_functions import compute_handicap
 from .login_federgolf import generate_headers
 
 
@@ -27,9 +27,6 @@ def handicap_request():
     }
 
     response = requests.get(url, headers=headers)
-
-    # print("First Request Response Status Code:", response.status_code)
-    # print("First Request Response Content:", response.content.decode())
 
     if response.status_code != 200:
         return False
@@ -132,7 +129,7 @@ def handicap_request():
             options=["Bianco", "Giallo", "Verde", "Blu", "Rosso", "Arancio"],
         )
 
-        handicap = st.text_input("Enter Handicap")
+        handicap = st.session_state.df["Index Nuovo"][0]
 
         if st.button("Compute Handicap"):
             url = "https://areariservata.federgolf.it/CourseHandicapCalc/Calc"
@@ -153,7 +150,7 @@ def handicap_request():
 
             response = requests.post(url, headers=headers, data=data)
 
-            course_handicap = None
+            playing_hcp = None
             soup = BeautifulSoup(response.text, "html.parser")
             table = soup.find("table", id="risultatiHCP")
             rows = table.find_all("tr")
@@ -161,14 +158,86 @@ def handicap_request():
             for row in rows:
                 columns = row.find_all("td")
                 if columns:
-                    course_handicap = columns[4].get_text(strip=True)
+                    playing_hcp = columns[4].get_text(strip=True)
 
-            st.markdown(f"Course Handicap: {course_handicap}")
+            # st.markdown(f"Course Handicap: {course_handicap}")
+            st.session_state.circolo = selected_circolo_value
+            st.session_state.percorso = selected_course_value
+            st.session_state.playing_hcp = playing_hcp
 
-            compute_handicap(
-                course_handicap,
-                selected_circolo_value,
-                selected_course_value,
-                tee_color,
-                handicap,
-            )
+
+def get_allcourses():
+    # GET THE TABLE OF ALL COURSES OFFICIALLY REGISTERED TO FEDERGOLF
+    # returns - Percorso Par / SR / CR /
+
+    url = "https://areariservata.federgolf.it/SlopeAndCourseRating/Index"
+
+    # Fetch the HTML content from the URL
+    response = requests.get(url)
+    html_content = response.text
+
+    # Parse the HTML content using BeautifulSoup
+    soup = BeautifulSoup(html_content, "html.parser")
+    table = soup.find("table", class_="single-table slope responsive")
+
+    # Assuming `html_content` contains the HTML content of the table
+    html_content = """
+    <tr>
+    <th>Circolo</th>
+    <th>Percorso</th>
+    <th align="center">PAR</th>
+    <th align="center">CR Nero Uomini</th>
+    <th align="center">Slope Nero Uomini</th>
+    <th align="center">CR Bianco Uomini</th>
+    <th align="center">Slope Bianco Uomini</th>
+    <th align="center">CR Giallo Uomini</th>
+    <th align="center">Slope Giallo Uomini</th>
+    <th align="center">CR Verde Uomini</th>
+    <th align="center">Slope Verde Uomini</th>
+    <th align="center">CR Blu Donne</th>
+    <th align="center">Slope Blu Donne</th>
+    <th align="center">CR Rosso Donne</th>
+    <th align="center">Slope Rosso Donne</th>
+    <th align="center">CR Arancio Donne</th>
+    <th align="center">Slope Arancio Donne</th>
+    </tr>
+    """
+
+    # Parse the HTML content using BeautifulSoup
+    soup = BeautifulSoup(html_content, "html.parser")
+
+    # Find all table rows
+    rows = soup.find_all("tr")
+
+    # Extract headers
+    headers = [th.text.strip() for th in rows[0].find_all("th")]
+
+    # Extract data rows
+    data = []
+
+    for row in rows[1:]:
+        data.append([td.text.strip() for td in row.find_all(["th", "td"])])
+
+    # Create Pandas DataFrame
+    allcourses_df = pd.DataFrame(data, columns=headers)
+
+    column_data = table.find_all("tr")
+    skippedrows = 3
+
+    for row in column_data[3:]:
+        row_data = row.find_all("td")
+        individual_row_data = [data.text.strip() for data in row_data]
+
+        if len(individual_row_data) == len(allcourses_df.columns):
+            # Add the row to the DataFrame
+            length = len(allcourses_df)
+            allcourses_df.loc[length] = individual_row_data
+        else:
+            print(f"I had to Skip {skippedrows} row")
+            skippedrows += 1
+            continue
+
+    st.write(f"Created and loaded a dataframe made of {len(allcourses_df)} courses")
+    # st.session_state.allcourses_df = allcourses_df
+
+    return allcourses_df

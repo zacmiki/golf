@@ -1,10 +1,9 @@
 import streamlit as st
 
-from modules.course_hcp import handicap_request
-from modules.graphs import *
-from modules.hcp_functions import *
+from modules.graphs import fig_companion
+from modules.hcp_manager_page import load_coursetable
+from modules.hcp_sim_page import hcp_sim
 from modules.login_federgolf import extract_data, login
-from modules.hcp_sim_page import hcp_sim, getallcourses
 
 
 # Define a function to display the login form
@@ -16,6 +15,7 @@ def display_login_form():
     submit_button = st.button("Login")
     return username, password, submit_button
 
+
 # Define a function to handle logout
 def handle_logout():
     st.sidebar.write("---")
@@ -25,72 +25,13 @@ def handle_logout():
         st.session_state.pop("df", None)
         st.rerun()
 
-# ---------------- Code for the first page --------------- 
-
-def fig_companion(df):
-
-    plot_type_mapping = {
-        "Line Area Plot": "line",
-        "Bar Chart": "bar",
-        "Scatter Plot": "scatter",
-    }
-
-    relevant_columns = ["Date_String", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
-    strippeddf = df[relevant_columns].copy()
-    strippeddf = strippeddf.rename(columns={"Index Nuovo": "New EGA"})
-    strippeddf = strippeddf.rename(columns={"Date_String": "Date"})
-
-    st.title("Official FederGolf Results ⛳️")
-    st.divider()
-
-    current_handicap = df["Index Nuovo"][0]
-    best_handicap = df["Index Nuovo"].min()
-
-    st.markdown(f"##### Tesserato 🏌️ {df['Tesserato'][0]}")
-    st.success(
-        f"Your Current HCP is: {current_handicap} - Best handicap: {best_handicap}",
-        icon="🏌️",
-    )
-    st.markdown(f"#### Slider to select the number of results")
-
-    # User has already logged in, display the handicap visualizer
-    # slider_value = st.slider("Select the number of results:", 1, 100, 20)
-    slider_value = st.slider(
-        "Select number of results", 1, 100, 20, label_visibility="collapsed"
-    )
-    # slider_value = st.slider("", 1, 100, 20)
-
-    # st.subheader("Plot of your Handicap progression")
-    st.markdown(f"##### Your handicap progression: last {slider_value} results:")
-    plot_type_options = list(plot_type_mapping.keys())
-    selected_plot_type = st.selectbox("Choose a plot type", plot_type_options)
-
-    plot_last_n(
-        df, slider_value, plot_type=plot_type_mapping.get(selected_plot_type, "line")
-    )
-
-    # st.header("Strokes in the Last {} Rounds".format(slider_value))
-    st.subheader(f"Strokes Distribution [Last {slider_value} Rounds]")
-    plot_gaussian = st.checkbox("Plot Gaussian")
-    histo_n(df, plot_gaussian, slider_value)
-
-    # st.subheader("Last Rounds Data [Downloadable CSV]")
-    st.markdown(f"### Detail of the last {slider_value} rounds:")
-
-    # st.write(df.iloc[:slider_value])
-    st.write(strippeddf.iloc[:slider_value])
-
 
 # ---------------------   MAIN PAGE LOGIG --------------------
 # Main app logic
 def main():
     selected_option = st.sidebar.selectbox(
         "Select an option",
-        [
-            "Your Official Rounds",
-            "Your Handicap Manager",
-            "New Handicap Simulation"
-        ],
+        ["Official Rounds", "Handicap Manager", "Handicap Simulation"],
     )
 
     # Initialize the logged_in state if not set
@@ -114,43 +55,40 @@ def main():
             else:
                 st.error("Please enter both username and password.")
     else:
-        if selected_option == "Your Official Rounds":
+        if selected_option == "Official Rounds":
             # Make the request to extract the data
             if "df" not in st.session_state or st.session_state.df.empty:
                 st.session_state.df = extract_data()
 
-            fig_companion(st.session_state.df)
+            # Plot everything for this page
+            fig_companion()
 
             # Add a logout button in the sidebar
             handle_logout()
 
-        elif selected_option == "Your Handicap Manager":
+        elif selected_option == "Handicap Simulation":
             if "df" not in st.session_state or st.session_state.df.empty:
                 st.session_state.df = extract_data()
 
             # User has already logged in, display the handicap visualizer
-            loadcoursetable(st.session_state.df)
-
-            # Make the request with the two possible parameters
-            handicap_request()
+            # hcp_sim(st.session_state.df)
+            hcp_sim()
 
             # Add a logout button in the sidebar
             handle_logout()
-            
-        elif selected_option == "New Handicap Simulation":
+
+        elif selected_option == "Handicap Manager":
             if "df" not in st.session_state or st.session_state.df.empty:
                 st.session_state.df = extract_data()
 
             # User has already logged in, display the handicap visualizer
-            hcp_sim(st.session_state.df)
-
-            # Make the request with the two possible parameters
-            handicap_request()
+            load_coursetable(st.session_state.df)
 
             # Add a logout button in the sidebar
             handle_logout()
         else:
             pass
+
 
 # ------------- Visualization Page ------ F.I.G. Session -----------
 
@@ -173,5 +111,3 @@ st.sidebar.markdown(
     """,
     unsafe_allow_html=True,
 )
-
-

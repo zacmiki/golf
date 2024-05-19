@@ -1,12 +1,8 @@
 import streamlit as st
 
 
-def loadcoursetable(dff):
-    import numpy as np
-    import pandas as pd
-
-    df = pd.DataFrame(dff)
-
+@st.cache_data
+def load_coursetable(df):
     # Filter the DataFrame to select the first 20 elements where 'SD' is not NaN
     filtered_df = df.dropna(subset=["SD"]).head(20)
     relevant_columns = ["Date_String", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
@@ -39,7 +35,8 @@ def loadcoursetable(dff):
 
     st.success(
         f"\n\n#### 🏌️ Tesserato {df['Tesserato'][0]}"
-        + f"\n\n#### ⛳️ Current HCP: {current_handicap}  ⛳️",
+        + f"\n\n#### ⛳️ Current HCP: {current_handicap}  ⛳️"
+        + f"\n\n#### ⛳️ Best HCP: {best_handicap}  ⛳️",
     )
 
     st.info(f"Your Next EXPIRING Round is")
@@ -69,9 +66,3 @@ def loadcoursetable(dff):
     st.write(worstofbest)
     st.write(element_number)
     """
-
-
-def compute_handicap(
-    course_handicap, selected_circolo_value, selected_course_value, tee_color, handicap
-):
-    pass

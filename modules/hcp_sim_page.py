@@ -1,134 +1,79 @@
+import numpy as np
 import streamlit as st
 
-# THE PAGE DISPLAY --------------------------------------
-def hcp_sim(dff):
-    import numpy as np
-    import pandas as pd
+from .course_hcp import get_allcourses, handicap_request
+from .graphs import plot_last_n
 
-    df = pd.DataFrame(dff)
-        
+
+# THE PAGE DISPLAY --------------------------------------
+def hcp_sim():
+
     st.title("🧮 New HCP Calculator")
     st.divider()
 
-    current_handicap = df["Index Nuovo"][0]
-    best_handicap = df["Index Nuovo"].min()
+    current_handicap = st.session_state.df["Index Nuovo"][0]
+    # best_handicap = st.session_state.df["Index Nuovo"].min()
 
     st.success(
-        f"\n\n#### 🏌️ Tesserato {df['Tesserato'][0]}"
+        f"\n\n#### 🏌️ Tesserato {st.session_state.df['Tesserato'][0]}"
         + f"\n\n#### ⛳️ Current HCP: {current_handicap}  ⛳️",
     )
-    
-    getallcourses()
+
+    # Playing handicap set to none
+    st.session_state.playing_hcp = None
+
+    # Make the request to get the course par
+    handicap_request()
+
+    # If handicap_request has been completed we can get to this part
+    if st.session_state.playing_hcp:
+        # Get all of the courses
+        sr, cr, per_percorso = get_course_value(get_allcourses())
+
+        # Get punti_stbl from user
+        punti_stbl = 40
+
+        new_sd, hcp_simulato = new_hcp(punti_stbl, sr, cr, per_percorso)
+
+        st.markdown(f"Handicap Simulato: {hcp_simulato}")
+        plot_last_n(df, n, plot_type="line", new_handicap=hcp_simulato)
 
 
-def compute_handicap(
-    course_handicap, selected_circolo_value, selected_course_value, tee_color, handicap
-):
-    pass
+# This needs to be fixed
+def get_course_value(all_courses):
+    filtered_df = all_courses[
+        (all_courses["Circolo"] == st.session_state.circolo)
+        & (all_courses["Percorso"] == st.session_state.percorso)
+    ]
+
+    if not filtered_df.empty:
+        cr = filtered_df.iloc[0]["CR Gialli Uomini"]
+        sr = filtered_df.iloc[0]["Slope Gialli Uomini"]
+        par_percorso = filtered_df.iloc[0]["PAR"]
+
+        return sr, cr, par_percorso
+
+    else:
+        return None
+
 
 # ---------------------------------------
 
-# New HCP Calculator --------
-def new_hcp(df, punti_stbl):
-    import numpy as np
-    import pandas as pd
 
-    filtered_df = df.dropna(subset=["SD"]).head(20)
-    valid_results_SD = filtered_df['SD'].values
-    
+# New HCP Calculator --------
+def new_hcp(punti_stbl, sr_percorso, cr_percorso, par_percorso):
+
+    filtered_df = st.session_state.df.dropna(subset=["SD"]).head(20)
+    valid_results_SD = filtered_df["SD"].values
+
     migliori_8 = np.sort(valid_results_SD)[:8]
-    
-    #Da Ricevere:
-    par_percorso = 70
-    sr_percorso = 126
-    cr_percorso = 70.3
-    #punti_stbl = 35
-    playing_hcp = 16
-    
-    new_sd = (113/sr_percorso) * (par_percorso + playinghcp - (punti_stbl - 36) - cr_percorso)
-    
+
+    new_sd = (113 / sr_percorso) * (
+        par_percorso + st.session_state.playing_hcp - (punti_stbl - 36) - cr_percorso
+    )
+
     migliori_8 = np.append(migliori_8, new_sd)
     best_8_SD = np.sort(migliori_8)[:8]
-    hcpsimulato = np.mean(best_8_SD)
-    
-    return new_sd, hcpsimulato
-# -------------------------------------
+    hcp_simulato = np.mean(best_8_SD)
 
-def getallcourses():
-    # GET THE TABLE OF ALL COURSES OFFICIALLY REGISTERED TO FEDERGOLF
-    # returns - Percorso Par / SR / CR /
-    import requests
-    from bs4 import BeautifulSoup
-    import pandas as pd
-    
-    url = "https://areariservata.federgolf.it/SlopeAndCourseRating/Index"
-    
-    # Fetch the HTML content from the URL
-    response = requests.get(url)
-    html_content = response.text
-    
-    # Parse the HTML content using BeautifulSoup
-    soup = BeautifulSoup(html_content, 'html.parser')
-    table = soup.find('table', class_ ="single-table slope responsive")
-    
-    # Assuming `html_content` contains the HTML content of the table
-    html_content = """
-    <tr>
-    <th>Circolo</th>
-    <th>Percorso</th>
-    <th align="center">PAR</th>
-    <th align="center">CR Nero Uomini</th>
-    <th align="center">Slope Nero Uomini</th>
-    <th align="center">CR Bianco Uomini</th>
-    <th align="center">Slope Bianco Uomini</th>
-    <th align="center">CR Giallo Uomini</th>
-    <th align="center">Slope Giallo Uomini</th>
-    <th align="center">CR Verde Uomini</th>
-    <th align="center">Slope Verde Uomini</th>
-    <th align="center">CR Blu Donne</th>
-    <th align="center">Slope Blu Donne</th>
-    <th align="center">CR Rosso Donne</th>
-    <th align="center">Slope Rosso Donne</th>
-    <th align="center">CR Arancio Donne</th>
-    <th align="center">Slope Arancio Donne</th>
-    </tr>
-    """
-    
-    # Parse the HTML content using BeautifulSoup
-    soup = BeautifulSoup(html_content, 'html.parser')
-    
-    # Find all table rows
-    rows = soup.find_all('tr')
-    
-    # Extract headers
-    headers = [th.text.strip() for th in rows[0].find_all('th')]
-    
-    # Extract data rows
-    data = []
-    
-    for row in rows[1:]:
-        data.append([td.text.strip() for td in row.find_all(['th', 'td'])])
-        
-    # Create Pandas DataFrame
-    allcourses_df = pd.DataFrame(data, columns=headers)
-    
-    column_data = table.find_all('tr')
-    skippedrows = 3
-    
-    for row in column_data[3:]:
-        row_data = row.find_all('td')
-        individual_row_data = [data.text.strip() for data in row_data]
-        
-        if len(individual_row_data) == len(allcourses_df.columns):
-            # Add the row to the DataFrame
-            length = len(allcourses_df)
-            allcourses_df.loc[length] = individual_row_data
-        else:
-            print(f"I had to Skip {skippedrows} row")
-            skippedrows +=1
-            continue
-            
-    st.write(f"Created and loaded a dataframe made of {len(allcourses_df)} courses")
-    st.session_state.allcourses_df = allcourses_df
-    
-    return allcourses_df
+    return new_sd, hcp_simulato

@@ -5,20 +5,72 @@ import streamlit as st
 from scipy.stats import norm
 
 
+# ---------------- Code for the first page ---------------
+def fig_companion():
+    plot_type_mapping = {
+        "Line Area Plot": "line",
+        "Bar Chart": "bar",
+        "Scatter Plot": "scatter",
+    }
+
+    relevant_columns = ["Date_String", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
+    strippeddf = st.session_state.df[relevant_columns].copy()
+    strippeddf = strippeddf.rename(columns={"Index Nuovo": "New EGA"})
+    strippeddf = strippeddf.rename(columns={"Date_String": "Date"})
+
+    st.title("Official FederGolf Results ⛳️")
+    st.divider()
+
+    current_handicap = st.session_state.df["Index Nuovo"][0]
+    best_handicap = st.session_state.df["Index Nuovo"].min()
+
+    st.markdown(f"##### Tesserato 🏌️ {st.session_state.df['Tesserato'][0]}")
+    st.success(
+        f"Your Current HCP is: {current_handicap} - Best handicap: {best_handicap}",
+        icon="🏌️",
+    )
+    st.markdown(f"#### Slider to select the number of results")
+
+    # User has already logged in, display the handicap visualizer
+    # slider_value = st.slider("Select the number of results:", 1, 100, 20)
+    slider_value = st.slider(
+        "Select number of results", 1, 100, 20, label_visibility="collapsed"
+    )
+    # slider_value = st.slider("", 1, 100, 20)
+
+    # st.subheader("Plot of your Handicap progression")
+    st.markdown(f"##### Your handicap progression: last {slider_value} results:")
+    plot_type_options = list(plot_type_mapping.keys())
+    selected_plot_type = st.selectbox("Choose a plot type", plot_type_options)
+
+    plot_last_n(
+        slider_value, plot_type=plot_type_mapping.get(selected_plot_type, "line")
+    )
+
+    # st.header("Strokes in the Last {} Rounds".format(slider_value))
+    st.subheader(f"Strokes Distribution [Last {slider_value} Rounds]")
+    plot_gaussian = st.checkbox("Plot Gaussian")
+    histo_n(plot_gaussian, slider_value)
+
+    # st.subheader("Last Rounds Data [Downloadable CSV]")
+    st.markdown(f"### Detail of the last {slider_value} rounds:")
+
+    # st.write(df.iloc[:slider_value])
+    st.write(strippeddf.iloc[:slider_value])
+
+
 # Cache this result to avoid recomputing it every time
 @st.cache_data
-def plot_last_n(df: pd.DataFrame, n: int, plot_type="line") -> None:
+def plot_last_n(n: int, plot_type="line", new_handicap=None) -> None:
     fig, ax = plt.subplots(figsize=(12, 7))
-    last_n_results = df.iloc[:n]
+    last_n_results = st.session_state.df.iloc[:n]
 
     if plot_type == "scatter":
-        np.random.seed(19680801)
-        colors = np.random.rand(50)
         ax.scatter(
             last_n_results["Date_String"][::-1],
             last_n_results["Index Nuovo"][::-1],
             s=150,
-            cmap=colors,
+            c="skyblue",
         )
         ax.grid(True)
 
@@ -41,6 +93,13 @@ def plot_last_n(df: pd.DataFrame, n: int, plot_type="line") -> None:
     elif plot_type == "bar":
         ax.bar(last_n_results["Date_String"][::-1], last_n_results["Index Nuovo"][::-1])
 
+    if new_handicap is not None:
+        # Add the new handicap to the plot
+        ax.axhline(
+            y=new_handicap, color="red", linestyle="--", label="Projected New Handicap"
+        )
+        ax.legend()
+
     ax.set_title("EGA Handicap for last {} Rounds".format(n), fontsize=16)
     ax.set_ylabel("EGA", fontsize=16)
     ax.minorticks_off()
@@ -51,7 +110,11 @@ def plot_last_n(df: pd.DataFrame, n: int, plot_type="line") -> None:
 
     ax.set_ylim(
         last_n_results["Index Nuovo"].min() - 0.2,
-        last_n_results["Index Nuovo"].max() + 0.2,
+        (
+            (last_n_results["Index Nuovo"].max() + 0.2)
+            if new_handicap is None
+            else max(last_n_results["Index Nuovo"].max(), new_handicap) + 0.2
+        ),
     )
 
     plt.tight_layout()
@@ -60,9 +123,9 @@ def plot_last_n(df: pd.DataFrame, n: int, plot_type="line") -> None:
 
 # ------- Histogram with Gaussian Fit
 @st.cache_data
-def histo_n(df, plot_gaussian: bool = True, num_results: int = 100) -> None:
+def histo_n(plot_gaussian: bool = True, num_results: int = 100) -> None:
     # Filter out non-finite values (None and zeros) from the DataFrame
-    filtered_data = df["AGS"].dropna().replace(0, np.nan).dropna()
+    filtered_data = st.session_state.df["AGS"].dropna().replace(0, np.nan).dropna()
 
     # Create a figure with a custom size
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -76,6 +139,7 @@ def histo_n(df, plot_gaussian: bool = True, num_results: int = 100) -> None:
 
     # Create a histogram with fixed range bins and custom bin width
     bins = range(70, int(max_value) + 4, 4)
+
     hist, bins, _ = ax.hist(
         last_n_values,
         bins=bins,
@@ -113,18 +177,18 @@ def histo_n(df, plot_gaussian: bool = True, num_results: int = 100) -> None:
     # Customize grid for major ticks
     ax.grid(True, which="major", linestyle="-", linewidth=0.5)  # Adjust grid style
 
-    # Print the center value of the Gaussian
-    ax.text(
-        mu,
-        max(gaussian_curve) * 0.9,
-        f"Center: {mu:.2f}",
-        color="r",
-        ha="center",
-        fontsize=10,
-    )
-
-    # Add a legend for the Gaussian fit
-    ax.legend(["Gaussian Fit"], loc="upper right", fontsize=8)
+    if plot_gaussian:
+        # Print the center value of the Gaussian
+        ax.text(
+            mu,
+            max(gaussian_curve) * 0.9,
+            f"Center: {mu:.2f}",
+            color="r",
+            ha="center",
+            fontsize=10,
+        )
+        # Add a legend for the Gaussian fit
+        ax.legend(["Gaussian Fit"], loc="upper right", fontsize=8)
 
     # Display the plot using Streamlit
     st.pyplot(fig)
