@@ -4,11 +4,8 @@ from modules.course_hcp import handicap_request
 from modules.graphs import *
 from modules.hcp_functions import *
 from modules.login_federgolf import extract_data, login
+from modules.hcp_sim_page import hcp_sim, getallcourses
 
-# Set up the sidebar
-st.sidebar.title("Your FederGolf Companion")
-st.sidebar.caption("By The Zacs")
-st.sidebar.write("Please select an option from the sidebar.")
 
 # Define a function to display the login form
 def display_login_form():
@@ -28,64 +25,8 @@ def handle_logout():
         st.session_state.pop("df", None)
         st.rerun()
 
-# Main app logic
-def main():
-    selected_option = st.sidebar.selectbox(
-        "Select an option",
-        [
-            "Your Official Rounds",
-            "Your Handicap Manager",
-        ],
-    )
+# ---------------- Code for the first page --------------- 
 
-    # Initialize the logged_in state if not set
-    if "logged_in" not in st.session_state:
-        st.session_state.logged_in = False
-
-    # Check if the user has already logged in
-    if not st.session_state.logged_in:
-        username, password, submit_button = display_login_form()
-
-        if submit_button:
-            if username and password:
-                st.session_state.logged_in = login(username, password)
-
-                if st.session_state.logged_in:
-                    st.rerun()
-                else:
-                    st.error(
-                        "Please enter a valid Username and Password. Something went wrong."
-                    )
-            else:
-                st.error("Please enter both username and password.")
-    else:
-        if selected_option == "Your Official Rounds":
-            # Make the request to extract the data
-            if "df" not in st.session_state or st.session_state.df.empty:
-                st.session_state.df = extract_data()
-
-            fig_companion(st.session_state.df)
-
-            # Add a logout button in the sidebar
-            handle_logout()
-
-        elif selected_option == "Your Handicap Manager":
-            if "df" not in st.session_state or st.session_state.df.empty:
-                st.session_state.df = extract_data()
-
-            # User has already logged in, display the handicap visualizer
-            loadcoursetable(st.session_state.df)
-
-            # Make the request with the two possible parameters
-            handicap_request()
-
-            # Add a logout button in the sidebar
-            handle_logout()
-
-        else:
-            pass
-
-# ------------- Visualization Page ------ F.I.G. Session -----------
 def fig_companion(df):
 
     plot_type_mapping = {
@@ -138,6 +79,86 @@ def fig_companion(df):
 
     # st.write(df.iloc[:slider_value])
     st.write(strippeddf.iloc[:slider_value])
+
+
+# ---------------------   MAIN PAGE LOGIG --------------------
+# Main app logic
+def main():
+    selected_option = st.sidebar.selectbox(
+        "Select an option",
+        [
+            "Your Official Rounds",
+            "Your Handicap Manager",
+            "New Handicap Simulation"
+        ],
+    )
+
+    # Initialize the logged_in state if not set
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+
+    # Check if the user has already logged in
+    if not st.session_state.logged_in:
+        username, password, submit_button = display_login_form()
+
+        if submit_button:
+            if username and password:
+                st.session_state.logged_in = login(username, password)
+
+                if st.session_state.logged_in:
+                    st.rerun()
+                else:
+                    st.error(
+                        "Please enter a valid Username and Password. Something went wrong."
+                    )
+            else:
+                st.error("Please enter both username and password.")
+    else:
+        if selected_option == "Your Official Rounds":
+            # Make the request to extract the data
+            if "df" not in st.session_state or st.session_state.df.empty:
+                st.session_state.df = extract_data()
+
+            fig_companion(st.session_state.df)
+
+            # Add a logout button in the sidebar
+            handle_logout()
+
+        elif selected_option == "Your Handicap Manager":
+            if "df" not in st.session_state or st.session_state.df.empty:
+                st.session_state.df = extract_data()
+
+            # User has already logged in, display the handicap visualizer
+            loadcoursetable(st.session_state.df)
+
+            # Make the request with the two possible parameters
+            handicap_request()
+
+            # Add a logout button in the sidebar
+            handle_logout()
+            
+        elif selected_option == "New Handicap Simulation":
+            if "df" not in st.session_state or st.session_state.df.empty:
+                st.session_state.df = extract_data()
+
+            # User has already logged in, display the handicap visualizer
+            hcp_sim(st.session_state.df)
+
+            # Make the request with the two possible parameters
+            handicap_request()
+
+            # Add a logout button in the sidebar
+            handle_logout()
+        else:
+            pass
+
+# ------------- Visualization Page ------ F.I.G. Session -----------
+
+# Set up the sidebar
+st.sidebar.title("Your FederGolf Companion")
+st.sidebar.caption("By The Zacs")
+st.sidebar.write("Please select an option from the sidebar.")
+
 
 if __name__ == "__main__":
     main()
