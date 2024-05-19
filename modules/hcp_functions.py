@@ -64,8 +64,9 @@ def loadcoursetable(dff):
     st.divider()
     st.subheader("Last 8 Valid Rounds (scorewise))")
     st.write(best_8)
-
+"""
 def compute_handicap(
     course_handicap, selected_circolo_value, selected_course_value, tee_color, handicap
 ):
     pass
+"""
