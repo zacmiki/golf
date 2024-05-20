@@ -60,7 +60,7 @@ def fig_companion():
 
 
 # Cache this result to avoid recomputing it every time
-@st.cache_data
+#@st.cache_data
 def plot_last_n(n: int, plot_type="line", new_handicap=None) -> None:
     fig, ax = plt.subplots(figsize=(12, 7))
 
