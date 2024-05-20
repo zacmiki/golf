@@ -60,7 +60,7 @@ def load_coursetable(df):
 
     st.divider()
     st.markdown(
-        "#### Rounds Valid for Hcp Calculation"
+        "#### Rounds Valid for Hcp Calculation \n"
         + "Best 8 SD out of last 20 Rounds",
     )
     st.write(best_8)
