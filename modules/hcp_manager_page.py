@@ -1,7 +1,7 @@
 import streamlit as st
 
 
-@st.cache_data
+#@st.cache_data
 def load_coursetable(df):
     # Filter the DataFrame to select the first 20 elements where 'SD' is not NaN
     filtered_df = df.dropna(subset=["SD"]).head(20)
