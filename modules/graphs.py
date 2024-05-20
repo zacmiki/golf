@@ -223,7 +223,7 @@ def histo_n(plot_gaussian: bool = True, num_results: int = 100) -> None:
 
 
 # ------- Histogram with Gaussian Fit
-@st.cache_data
+#st.cache_data
 def histo_n(plot_gaussian: bool = True, num_results: int = 100) -> None:
     # Filter out non-finite values (None and zeros) from the DataFrame
     filtered_data = st.session_state.df["AGS"].dropna().replace(0, np.nan).dropna()
