@@ -52,7 +52,7 @@ def load_coursetable(df):
 
     st.subheader("Last 20 VALID Rounds")
     st.write(
-        "You can sort the table by clicking on the column name to  \n ... in case you want to what troubles are you running into, in your golfing future ..."
+        "You can sort the table by column clicking on them"
     )
     st.write(strippeddf)
 
@@ -61,7 +61,7 @@ def load_coursetable(df):
     st.divider()
     st.markdown(
         "#### Rounds Valid for Hcp Calculation \n"
-        + "(i.e. Best 8 SD out of last 20 Rounds)",
+        + "(i.e. best 8 SD out of last 20 rounds)",
     )
     st.write(best_8)
 
