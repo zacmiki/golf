@@ -87,7 +87,7 @@ def new_hcp(sr_percorso, cr_percorso, par_percorso):
 
     migliori_8 = np.append(migliori_8, new_sd)
     best_8_SD = np.sort(migliori_8)[:8]
-    st.markdown(f"{new_SD}, {best_8_SD}")
+    st.write(f"{new_sd}, {best_8_SD}")
     
     # Calculating the new HCP by taking the 96% of the avg(best 8)  
     hcp_simulato = np.mean(best_8_SD)
