@@ -83,7 +83,7 @@ def plot_last_n(n: int, plot_type="line", new_handicap=None) -> None:
             last_n_results["Date_String"][::-1],
             y_values,
             s=sizes,
-            c="skyblue",
+            c="blue",
         )
         ax.grid(True)
 
@@ -108,6 +108,7 @@ def plot_last_n(n: int, plot_type="line", new_handicap=None) -> None:
             last_n_results["Date_String"][::-1],
             last_n_results["Index Nuovo"][::-1],
             color="skyblue",
+            edgecolor="black",
             alpha=0.5,
         )
 
