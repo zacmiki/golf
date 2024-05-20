@@ -83,7 +83,7 @@ def new_hcp(sr_percorso, cr_percorso, par_percorso):
         - float(cr_percorso)
     )
     # Taking the SD rounded to the first decimal according to Royal & Ancient
-    new_sd = round(new_sd, 1)
+    #new_sd = round(new_sd, 1)
 
     migliori_8 = np.append(migliori_8, new_sd)
     best_8_SD = np.sort(migliori_8)[:8]
