@@ -59,7 +59,10 @@ def load_coursetable(df):
     # st.write(st.write(st.session_state.df))
 
     st.divider()
-    st.subheader("Last 8 Valid Rounds (scorewise))")
+    st.markdown(
+        "#### Rounds Valid for Hcp Calculation"
+        + "Best 8 SD out of last 20 Rounds",
+    )
     st.write(best_8)
 
     """
