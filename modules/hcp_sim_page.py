@@ -82,9 +82,13 @@ def new_hcp(sr_percorso, cr_percorso, par_percorso):
         - (int(st.session_state.punti_stbl) - 36)
         - float(cr_percorso)
     )
+    # Taking the SD rounded to the first decimal according to Royal & Ancient
+    new_sd = round(new_sd, 1)
 
     migliori_8 = np.append(migliori_8, new_sd)
     best_8_SD = np.sort(migliori_8)[:8]
-    hcp_simulato = np.mean(best_8_SD)
+    
+    # Calculating the new HCP by taking the 96% of the avg(best 8)  
+    hcp_simulato = np.mean(best_8_SD) * 0.96
 
     return new_sd, hcp_simulato
