@@ -1,7 +1,7 @@
 import streamlit as st
 
 
-#@st.cache_data
+@st.cache_data
 def load_coursetable(df):
     # Filter the DataFrame to select the first 20 elements where 'SD' is not NaN
     filtered_df = df.dropna(subset=["SD"]).head(20)
@@ -49,21 +49,32 @@ def load_coursetable(df):
         f"""Apparently you have {20 - max_index} games to play before you lose your next valid round which is  \n
     	{highest_indexed_element['Gara']} - Stbl = {highest_indexed_element['Stbl']} - SD = {highest_indexed_element['SD']}"""
     )
-
-    st.subheader("Last 20 VALID Rounds")
-    st.write(
-        "You can sort the table by column clicking on them"
-    )
-    st.write(strippeddf)
-
-    # st.write(st.write(st.session_state.df))
-
     st.divider()
+    
+    
+    
+    st.subheader("Last 20 VALID Rounds")
     st.markdown(
-        "#### Rounds Valid for Hcp Calculation \n"
-        + "(i.e. best 8 SD out of last 20 rounds)",
+        "##### Rounds Valid for HCP (Lowest SD) are highlighted"
     )
-    st.write(best_8)
+    
+    smallest_8_indices = strippeddf.nsmallest(8, 'SD').index
+    # Step 2: Define the highlighting function
+    
+    def highlight_smallest(s):
+        #return ['background-color: skyblue' if i in smallest_8_indices else '' for i in s.index]
+        return ['background-color: rgba(250, 255, 225, 0.3)' if i in smallest_8_indices else '' for i in s.index]
+    
+    format_dict = {
+        'Stbl': '{:,.0f}',         # Integer format with no decimals
+        'AGS': '{:,.0f}',          # Integer format with no decimals
+        'SD': '{:,.1f}',           # Float format with one decimal
+        'New EGA': '{:,.1f}'       # Float format with one decimal
+    }
+    
+    styled_df = strippeddf.style.apply(highlight_smallest, axis=0).format(format_dict)
+    st.write(styled_df)
+
 
     """
     st.write(worstofbest)
