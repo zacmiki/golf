@@ -71,7 +71,8 @@ def get_course_value(all_courses):
 # New HCP Calculator --------
 def new_hcp(sr_percorso, cr_percorso, par_percorso):
 
-    filtered_df = st.session_state.df.dropna(subset=["SD"]).head(20)
+    #filtered_df = st.session_state.df.dropna(subset=["SD"]).head(20)
+    filtered_df = st.session_state.df.dropna(subset=["SD"]).head(19)
     valid_results_SD = filtered_df["SD"].values
 
     migliori_8 = np.sort(valid_results_SD)[:8]
