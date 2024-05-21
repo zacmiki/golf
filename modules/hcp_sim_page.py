@@ -92,6 +92,8 @@ def new_hcp(sr_percorso, cr_percorso, par_percorso):
     # Calculating the new HCP by taking the 96% of the avg(best 8)  
     hcp_simulato = np.mean(best_8_SD)
     hcp_simulato = round(hcp_simulato, 1)
-    st.write(f"Temp String to verify calculation {new_sd}, {best_8_SD}, {hcp_simulato}")
+    # --------------------------------------- Debugging String ------------------------
+    #st.write(f"Temp String to verify calculation {new_sd}, {best_8_SD}, {hcp_simulato}")
+    # --------------------------------------- Debugging String ------------------------
 
     return new_sd, hcp_simulato
