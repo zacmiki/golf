@@ -63,7 +63,7 @@ def load_coursetable(df):
     
     def highlight_smallest(s):
         #return ['background-color: skyblue' if i in smallest_8_indices else '' for i in s.index]
-        return ['background-color: rgba(250, 255, 225, 0.5)' if i in smallest_8_indices else '' for i in s.index]
+        return ['background-color: rgba(250, 255, 225, 0.8)' if i in smallest_8_indices else '' for i in s.index]
     
     format_dict = {
         'Stbl': '{:,.0f}',         # Integer format with no decimals
