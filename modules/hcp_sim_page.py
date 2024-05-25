@@ -46,6 +46,17 @@ def hcp_sim():
         # Last 20 as an example
         plot_last_n(20, plot_type="line", new_handicap=hcp_simulato)
 
+    st.divider()
+    st.markdown(
+    """
+    <a href="https://buymeacoffee.com/miczac?l=it" target="_blank">
+        <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=YourUsername&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff">
+    </a>
+    """,
+    unsafe_allow_html=True,
+    )   
+
+
 
 # This needs to be fixed
 def get_course_value(all_courses):
