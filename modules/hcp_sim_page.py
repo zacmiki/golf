@@ -33,11 +33,9 @@ def hcp_sim():
         new_sd, hcp_simulato = new_hcp(sr, cr, per_percorso)
         
         st.info(
-        f"\n\n##### Nuovo Handicap Calcolato: {hcp_simulato: .2f}"
-        + f"\n\n##### Nuovo SD Calcolato: {new_sd: .2f}",
+        f"\n\n##### Handicap Calcolato: {hcp_simulato: .2f}"
+        + f"\n\n##### SD Calcolato: {new_sd: .2f}",
         )
-        
-        #st.markdown(f"Handicap Simulato: {hcp_simulato}")
 
         st.success(
         f"\n\n#### EGA Plot - 20 results plus new projected value"
@@ -55,8 +53,6 @@ def hcp_sim():
     """,
     unsafe_allow_html=True,
     )   
-
-
 
 # This needs to be fixed
 def get_course_value(all_courses):
