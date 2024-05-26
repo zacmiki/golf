@@ -132,7 +132,7 @@ def handicap_request():
         handicap = st.session_state.df["Index Nuovo"][0]
 
         # Get punti_stbl from user
-        st.session_state.punti_stbl = st.text_input("Entrai il Punteggion Stableford")
+        st.session_state.punti_stbl = st.text_input("Punteggio Stableford")
 
         if st.button("Compute Handicap"):
             url = "https://areariservata.federgolf.it/CourseHandicapCalc/Calc"
