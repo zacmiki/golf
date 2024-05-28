@@ -3,6 +3,7 @@ import streamlit as st
 from modules.graphs import fig_companion
 from modules.hcp_manager_page import load_coursetable
 from modules.hcp_sim_page import hcp_sim
+from modules.playing_hcp_page import playing_hcp
 from modules.login_federgolf import extract_data, login
 
 # Define a function to display the login form
@@ -58,6 +59,8 @@ def main():
         st.session_state.selected_option = "Handicap Manager"
     if sidebar_button("Handicap Simulation"):
         st.session_state.selected_option = "Handicap Simulation"
+    if sidebar_button("Playing Handicap"):
+        st.session_state.selected_option = "Playing Handicap"
     
     # Check if the user has already logged in
     if not st.session_state.logged_in:
@@ -107,9 +110,16 @@ def main():
 
             # Add a logout button in the sidebar
             handle_logout()
+        elif st.session_state.selected_option == "Playing Handicap":
+            if "df" not in st.session_state or st.session_state.df.empty:
+                st.session_state.df = extract_data()
+            # User already logged in, display the Playing handicap Page
+            playing_hcp()
+            
+            # Add a Logout buttong in the sidebar
+            handle_logout()
         else:
             st.write("Please select an option from the sidebar.")
-
 
     st.sidebar.divider()
     st.sidebar.markdown(
