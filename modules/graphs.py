@@ -211,11 +211,12 @@ def histo_n(plot_gaussian: bool = True, num_results: int = 100) -> None:
         # Print the center value of the Gaussian
         ax.text(
             mu,
-            max(gaussian_curve) * 0.9,
+            max(gaussian_curve) * 0.5,
             f"Center: {mu:.2f}",
             color="r",
             ha="center",
-            fontsize=10,
+            fontsize="x-large",
+            fontweight = "demibold"
         )
         # Add a legend for the Gaussian fit
         ax.legend(["Gaussian Fit"], loc="upper right", fontsize=8)
