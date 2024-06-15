@@ -6,6 +6,8 @@ from modules.hcp_sim_page import hcp_sim
 from modules.playing_hcp_page import playing_hcp
 from modules.login_federgolf import extract_data, login
 
+st.set_page_config(layout="wide")
+
 # Define a function to display the login form
 def display_login_form():
     st.title("Login to Load Your F.I.G. Results")
