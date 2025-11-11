@@ -7,7 +7,7 @@ import pandas as pd
 # -------------------------
 # Login function
 # -------------------------
-def login_and_get_session(username: str, password: str) -> bool:
+def login(username: str, password: str) -> bool:
     import re
     session = requests.Session()
     login_page_url = "https://areariservata.federgolf.it/"
@@ -60,15 +60,14 @@ def login_and_get_session(username: str, password: str) -> bool:
 # -------------------------
 # Extract data function
 # -------------------------
-def extract_data() -> pd.DataFrame | None:
+def extract_data(session: requests.Session) -> pd.DataFrame | None:
     """
-    Use the stored session to fetch the results page
+    Use the provided session to fetch the results page
     """
-    if "federgolf_session" not in st.session_state:
+    if not session:
         st.error("No session available. Please login first.")
         return None
 
-    session = st.session_state.federgolf_session
     url = "https://areariservata.federgolf.it/Risultati/ShowGrid"
 
     headers = {
