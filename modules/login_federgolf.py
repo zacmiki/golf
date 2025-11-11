@@ -66,7 +66,8 @@ def login(username: str, password: str) -> bool:
 
     url = "https://areariservata.federgolf.it/Home/AuthenticateUser"
     data = {
-        "UserName": username,
+        #"UserName": username,
+        "User": username,
         "Password": password,
         "__RequestVerificationToken": antiforgery_token,
     }
