@@ -7,7 +7,7 @@ import pandas as pd
 # -------------------------
 # Login function
 # -------------------------
-def login(username: str, password: str) -> bool:
+def login_and_get_session(username: str, password: str) -> bool:
     """
     Login using requests only and store the session in st.session_state
     """
