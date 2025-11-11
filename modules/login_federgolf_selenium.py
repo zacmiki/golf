@@ -64,6 +64,7 @@ def extract_data(session: requests.Session) -> pd.DataFrame | None:
     """
     Fetch the user's results page using the provided session.
     Returns a pandas DataFrame with normalized column names.
+    Date column is formatted as YYYY-MM-DD (no time).
     """
     if not session:
         st.error("No session available. Please login first.")
@@ -75,45 +76,4 @@ def extract_data(session: requests.Session) -> pd.DataFrame | None:
         "Referer": "https://areariservata.federgolf.it/Home/AuthenticateUser"
     }
 
-    r = session.get(url, headers=headers)
-    if r.status_code != 200:
-        st.error(f"Failed to fetch data: {r.status_code}")
-        return None
-
-    soup = BeautifulSoup(r.content, "html.parser")
-    table = soup.find("table", class_="entity-list-view w-100")
-    if table is None:
-        st.warning("No table found on the page")
-        return None
-
-    # Extract headers
-    headers_list = [th.get_text(strip=True) for th in table.find_all("th")]
-    # Normalize headers
-    headers_list = [col.strip() for col in headers_list]
-
-    # Extract rows
-    rows = []
-    for tr in table.find_all("tr")[1:]:
-        cells = [td.get_text(strip=True) for td in tr.find_all("td")]
-        if len(cells) == len(headers_list):
-            rows.append(cells)
-
-    df = pd.DataFrame(rows, columns=headers_list)
-
-    # Strip whitespace from column names
-    df.columns = [col.strip() for col in df.columns]
-
-    # Convert numeric columns safely
-    numeric_cols = [
-        "Index Nuovo", "Index Vecchio", "Variazione", "AGS", "Par",
-        "Playing HCP", "CR", "SR", "Stbl", "Buche", "Numero tessera"
-    ]
-    for col in numeric_cols:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-
-    # Convert date column
-    if "Data" in df.columns:
-        df["Data"] = pd.to_datetime(df["Data"], errors="coerce", dayfirst=True)
-
-    return df
+    r = ses
