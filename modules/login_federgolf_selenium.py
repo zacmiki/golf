@@ -3,21 +3,21 @@ import requests
 from bs4 import BeautifulSoup
 import streamlit as st
 import pandas as pd
+import re
 
 # -------------------------
 # Login function
 # -------------------------
 def login(username: str, password: str) -> bool:
-    import re
     session = requests.Session()
     login_page_url = "https://areariservata.federgolf.it/"
 
+    # Step 1: Get login page to retrieve the antiforgery token
     r = session.get(login_page_url)
     if r.status_code != 200:
         st.error(f"Cannot reach login page: {r.status_code}")
         return False
 
-    # Parse token from <script> tag
     soup = BeautifulSoup(r.text, "html.parser")
     antiforgery_token = ""
     scripts = soup.find_all("script")
@@ -32,7 +32,7 @@ def login(username: str, password: str) -> bool:
         st.error("Cannot find antiforgeryToken on the page")
         return False
 
-    # Post login
+    # Step 2: Post login data
     post_url = "https://areariservata.federgolf.it/Home/AuthenticateUser"
     payload = {
         "User": username,
@@ -47,8 +47,9 @@ def login(username: str, password: str) -> bool:
     }
 
     r2 = session.post(post_url, data=payload, headers=headers)
-    
-    if r2.status_code != 200 or len(r2.content) < 10000:  # rough check if login page returned again
+
+    # Basic check for login success
+    if r2.status_code != 200 or len(r2.content) < 10000:
         st.error("Login failed. Check your credentials.")
         return False
 
@@ -56,20 +57,19 @@ def login(username: str, password: str) -> bool:
     return True
 
 
-
 # -------------------------
 # Extract data function
 # -------------------------
 def extract_data(session: requests.Session) -> pd.DataFrame | None:
     """
-    Use the provided session to fetch the results page
+    Fetch the user's results page using the provided session.
+    Returns a pandas DataFrame with normalized column names.
     """
     if not session:
         st.error("No session available. Please login first.")
         return None
 
     url = "https://areariservata.federgolf.it/Risultati/ShowGrid"
-
     headers = {
         "User-Agent": "Mozilla/5.0",
         "Referer": "https://areariservata.federgolf.it/Home/AuthenticateUser"
@@ -86,8 +86,12 @@ def extract_data(session: requests.Session) -> pd.DataFrame | None:
         st.warning("No table found on the page")
         return None
 
+    # Extract headers
     headers_list = [th.get_text(strip=True) for th in table.find_all("th")]
+    # Normalize headers
+    headers_list = [col.strip() for col in headers_list]
 
+    # Extract rows
     rows = []
     for tr in table.find_all("tr")[1:]:
         cells = [td.get_text(strip=True) for td in tr.find_all("td")]
@@ -96,14 +100,19 @@ def extract_data(session: requests.Session) -> pd.DataFrame | None:
 
     df = pd.DataFrame(rows, columns=headers_list)
 
-    # Safe numeric conversion
-    for col in df.columns:
-        try:
-            df[col] = pd.to_numeric(df[col])
-        except Exception:
-            pass
+    # Strip whitespace from column names
+    df.columns = [col.strip() for col in df.columns]
 
-    # Convert date column if it exists
+    # Convert numeric columns safely
+    numeric_cols = [
+        "Index Nuovo", "Index Vecchio", "Variazione", "AGS", "Par",
+        "Playing HCP", "CR", "SR", "Stbl", "Buche", "Numero tessera"
+    ]
+    for col in numeric_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    # Convert date column
     if "Data" in df.columns:
         df["Data"] = pd.to_datetime(df["Data"], errors="coerce", dayfirst=True)
 
