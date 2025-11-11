@@ -1,47 +1,72 @@
-import streamlit as st
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
+# modules/login_federgolf_requests.py
 import requests
-import pandas as pd
 from bs4 import BeautifulSoup
+import streamlit as st
+import pandas as pd
 
 # -------------------------
-# Login function (Selenium)
+# Login function
 # -------------------------
-def login_and_get_session(username: str, password: str) -> requests.Session | None:
-    """Login via Selenium and return a requests.Session with valid cookies"""
-    options = Options()
-    options.add_argument("--headless=new")
-    driver = webdriver.Chrome(options=options)
+def login(username: str, password: str) -> bool:
+    """
+    Login using requests only and store the session in st.session_state
+    """
+    session = requests.Session()
+    login_page_url = "https://areariservata.federgolf.it/Home/Login"
+
+    # Step 1: Get login page to retrieve the __RequestVerificationToken
+    r = session.get(login_page_url)
+    if r.status_code != 200:
+        st.error(f"Cannot reach login page: {r.status_code}")
+        return False
+
+    soup = BeautifulSoup(r.text, "html.parser")
+    token_input = soup.find("input", {"name": "__RequestVerificationToken"})
+    if not token_input:
+        st.error("Cannot find __RequestVerificationToken on the page")
+        return False
+
+    token = token_input["value"]
+
+    # Step 2: Post login data
+    post_url = "https://areariservata.federgolf.it/Home/AuthenticateUser"
+    payload = {
+        "User": username,
+        "Password": password,
+        "__RequestVerificationToken": token,
+    }
+
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Referer": login_page_url,
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+
+    r2 = session.post(post_url, data=payload, headers=headers)
     
-    try:
-        driver.get("https://areariservata.federgolf.it/Home/Login")
-        driver.find_element(By.ID, "User").send_keys(username)
-        driver.find_element(By.ID, "Password").send_keys(password)
-        driver.find_element(By.CSS_SELECTOR, "input[type='submit']").click()
-        
-        if "logout" not in driver.page_source.lower() and "benvenuto" not in driver.page_source.lower():
-            st.error("❌ Login failed!")
-            driver.quit()
-            return None
-        
-        # Transfer cookies to requests.Session
-        session = requests.Session()
-        for cookie in driver.get_cookies():
-            session.cookies.set(cookie['name'], cookie['value'])
-        
-        st.success("✅ Login successful!")
-        return session
-    
-    finally:
-        driver.quit()
+    if r2.status_code != 200 or "login" in r2.url.lower():
+        st.error("Login failed. Check your credentials.")
+        return False
+
+    # Store the session in Streamlit
+    st.session_state.federgolf_session = session
+    return True
+
 
 # -------------------------
-# Data extraction function
+# Extract data function
 # -------------------------
-def extract_data(session: requests.Session) -> pd.DataFrame | None:
+def extract_data() -> pd.DataFrame | None:
+    """
+    Use the stored session to fetch the results page
+    """
+    if "federgolf_session" not in st.session_state:
+        st.error("No session available. Please login first.")
+        return None
+
+    session = st.session_state.federgolf_session
     url = "https://areariservata.federgolf.it/Risultati/ShowGrid"
+
     headers = {
         "User-Agent": "Mozilla/5.0",
         "Referer": "https://areariservata.federgolf.it/Home/AuthenticateUser"
