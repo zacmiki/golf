@@ -8,32 +8,36 @@ import pandas as pd
 # Login function
 # -------------------------
 def login_and_get_session(username: str, password: str) -> bool:
-    """
-    Login using requests only and store the session in st.session_state
-    """
+    import re
     session = requests.Session()
-    login_page_url = "https://areariservata.federgolf.it/Home/Login"
+    login_page_url = "https://areariservata.federgolf.it/"
 
-    # Step 1: Get login page to retrieve the __RequestVerificationToken
     r = session.get(login_page_url)
     if r.status_code != 200:
         st.error(f"Cannot reach login page: {r.status_code}")
         return False
 
+    # Parse token from <script> tag
     soup = BeautifulSoup(r.text, "html.parser")
-    token_input = soup.find("input", {"name": "__RequestVerificationToken"})
-    if not token_input:
-        st.error("Cannot find __RequestVerificationToken on the page")
+    antiforgery_token = ""
+    scripts = soup.find_all("script")
+    for script in scripts:
+        if script.string and "antiforgeryToken" in script.string:
+            match = re.search(r'value="(.+?)"', script.string)
+            if match:
+                antiforgery_token = match.group(1)
+                break
+
+    if not antiforgery_token:
+        st.error("Cannot find antiforgeryToken on the page")
         return False
 
-    token = token_input["value"]
-
-    # Step 2: Post login data
+    # Post login
     post_url = "https://areariservata.federgolf.it/Home/AuthenticateUser"
     payload = {
         "User": username,
         "Password": password,
-        "__RequestVerificationToken": token,
+        "__RequestVerificationToken": antiforgery_token,
     }
 
     headers = {
@@ -44,13 +48,13 @@ def login_and_get_session(username: str, password: str) -> bool:
 
     r2 = session.post(post_url, data=payload, headers=headers)
     
-    if r2.status_code != 200 or "login" in r2.url.lower():
+    if r2.status_code != 200 or len(r2.content) < 10000:  # rough check if login page returned again
         st.error("Login failed. Check your credentials.")
         return False
 
-    # Store the session in Streamlit
     st.session_state.federgolf_session = session
     return True
+
 
 
 # -------------------------
