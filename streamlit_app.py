@@ -83,7 +83,11 @@ def main():
                 st.session_state.username = username
                 st.session_state.password = password
                 with st.spinner("Logging in..."):
-                    session = login_and_get_session(username, password)
+                    logged_in = login(username, password)
+                    if logged_in:
+                        st.session_state.logged_in = True
+                        st.session_state.selected_option = "Handicap Manager"
+                        st.rerun()
                     if session:
                         st.session_state.federgolf_session = session
                         st.session_state.logged_in = True
