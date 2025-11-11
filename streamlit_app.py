@@ -6,7 +6,7 @@ from modules.hcp_sim_page import hcp_sim
 from modules.playing_hcp_page import playing_hcp
 
 # Import the new login/extract_data module
-from modules.login_federgolf_selenium import login_and_get_session, extract_data  # updated module
+from modules.login_federgolf_selenium import login, extract_data  # updated module
 
 st.set_page_config(layout="wide")
 
