@@ -56,18 +56,23 @@ def hcp_sim():
 
 # This needs to be fixed
 def get_course_value(all_courses):
+    st.write("🔍 Available columns:", list(all_courses.columns))
+    st.write("🔍 Example row:", all_courses.head(1))
+    st.write("🔍 Looking for Circolo:", st.session_state.circolo)
+    st.write("🔍 Looking for Percorso:", st.session_state.percorso)
+
     filtered_df = all_courses[
         (all_courses["Circolo"] == st.session_state.circolo)
         & (all_courses["Percorso"] == st.session_state.percorso)
     ]
 
+    st.write("🔍 Filter result:", filtered_df)
+
     if not filtered_df.empty:
         cr = filtered_df.iloc[0]["CR Giallo Uomini"]
         sr = filtered_df.iloc[0]["Slope Giallo Uomini"]
         par_percorso = filtered_df.iloc[0]["PAR"]
-
         return sr, cr, par_percorso
-
     else:
         return None
 
