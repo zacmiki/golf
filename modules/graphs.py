@@ -65,86 +65,51 @@ def fig_companion():
 def plot_last_n(n: int, plot_type="line", new_handicap=None) -> None:
     fig, ax = plt.subplots(figsize=(12, 7))
 
-    last_n_results = st.session_state.df.iloc[:n]
+    # Take last n valid rows (drop missing SD or Index Nuovo)
+    last_n_results = st.session_state.df.dropna(subset=["Index Nuovo", "Data"]).tail(n).copy()
+
+    # Ensure Data column is string
+    last_n_results["Data"] = last_n_results["Data"].astype(str)
 
     # Append a new handicap if provided
     if new_handicap is not None:
-        new_row = pd.DataFrame({"Date_String": ["New"], "Index Nuovo": [new_handicap]})
-        # Add it before since we will sort it in reverse after
-        last_n_results = pd.concat([new_row, last_n_results], ignore_index=True)
+        new_row = pd.DataFrame({"Data": ["New"], "Index Nuovo": [new_handicap]})
+        last_n_results = pd.concat([last_n_results, new_row], ignore_index=True)
+
+    x_values = last_n_results["Data"][::-1]
+    y_values = last_n_results["Index Nuovo"][::-1]
 
     if plot_type == "scatter":
-        # Normalize the sizes for the scatter plot
-        y_values = last_n_results["Index Nuovo"][::-1]
-        sizes = (y_values - y_values.min()) / (
-            y_values.max() - y_values.min()
-        ) * 1000 + 50  # Example scaling
-
-        ax.scatter(
-            last_n_results["Date_String"][::-1],
-            y_values,
-            s=sizes,
-            c="blue",
-        )
+        # Normalize sizes for scatter plot
+        sizes = (y_values - y_values.min()) / (y_values.max() - y_values.min()) * 1000 + 50
+        ax.scatter(x_values, y_values, s=sizes, c="blue")
         ax.grid(True)
 
     elif plot_type == "line":
-        ax.plot(
-            last_n_results["Data"][::-1],
-            last_n_results["Index Nuovo"][::-1],
-            linestyle="-",
-            marker="o",
-            markersize=10,
-        )
-        ax.fill_between(
-            last_n_results["Data"][::-1],
-            last_n_results["Index Nuovo"][::-1],
-            color="skyblue",
-            alpha=0.5,
-        )
-        ax.grid(True)  # Add grid lines only for line plot
+        ax.plot(x_values, y_values, linestyle="-", marker="o", markersize=10)
+        ax.fill_between(x_values, y_values, color="skyblue", alpha=0.5)
+        ax.grid(True)
 
     elif plot_type == "bar":
-        ax.bar(
-            last_n_results["Date_String"][::-1],
-            last_n_results["Index Nuovo"][::-1],
-            color="skyblue",
-            edgecolor="black",
-            alpha=0.5,
-        )
+        ax.bar(x_values, y_values, color="skyblue", edgecolor="black", alpha=0.5)
 
-    # Highlight the new handicap in red if it's provided
+    # Highlight the new handicap in red if provided
     if new_handicap is not None:
-        # Get the index of the new handicap
-        new_index = last_n_results.index[0]
-        ax.plot(
-            last_n_results["Date_String"][new_index],
-            last_n_results["Index Nuovo"][new_index],
-            "ro",
-            markersize=12,
-        )
+        ax.plot(x_values.iloc[-1], y_values.iloc[-1], "ro", markersize=12)
+        ax.axvline(x=len(x_values) - 1, color="red", linestyle="--", linewidth=2)
 
-        # Add a red vertical line before the new handicap
-        # if new_index > 0:
-        ax.axvline(
-            x=last_n_results.index[-1] - 1, color="red", linestyle="--", linewidth=2
-        )
-
-    ax.set_title("EGA Handicap for last {} Rounds".format(n), fontsize=16)
+    ax.set_title(f"EGA Handicap for last {n} Rounds", fontsize=16)
     ax.set_ylabel("EGA", fontsize=16)
     ax.minorticks_off()
     ax.tick_params(axis="x", rotation=45)
-    ax.tick_params(axis="y", which="both", length=0)  # Remove y-axis ticks
-    ax.set_xticks(range(0, len(last_n_results["Data"][::-1]), 2))
-    ax.set_xticklabels(last_n_results["Data"][::-1].iloc[::2])
+    ax.tick_params(axis="y", which="both", length=0)
+
+    ax.set_xticks(range(0, len(x_values), max(1, len(x_values)//10)))
+    ax.set_xticklabels(x_values.iloc[::max(1, len(x_values)//10)])
 
     ax.set_ylim(
-        last_n_results["Index Nuovo"].min() - 0.2,
-        (
-            (last_n_results["Index Nuovo"].max() + 0.2)
-            if new_handicap is None
-            else max(last_n_results["Index Nuovo"].max(), new_handicap) + 0.2
-        ),
+        y_values.min() - 0.2,
+        max(y_values.max(), new_handicap if new_handicap is not None else y_values.max()) + 0.2
     )
 
     plt.tight_layout()
