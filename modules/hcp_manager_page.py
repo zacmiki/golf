@@ -20,7 +20,7 @@ def load_coursetable(df):
     filtered_df["SD"] = pd.to_numeric(filtered_df["SD"], errors="coerce")
 
     # Select relevant columns
-    relevant_columns = ["Date_String", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
+    relevant_columns = ["Data", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
     strippeddf = filtered_df[relevant_columns].copy().reset_index(drop=True)
 
     # -------------------------
