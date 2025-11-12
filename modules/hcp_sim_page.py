@@ -79,34 +79,47 @@ def get_course_value(all_courses):
 
 # ---------------------------------------
 
-
-# New HCP Calculator --------
 def new_hcp(sr_percorso, cr_percorso, par_percorso):
+    df = st.session_state.df.copy()
 
-    #filtered_df = st.session_state.df.dropna(subset=["SD"]).head(20)
-    filtered_df = st.session_state.df.dropna(subset=["SD"]).head(19)
-    valid_results_SD = filtered_df["SD"].values
+    # --- Clean and prepare the SD column ---
+    df["SD"] = (
+        df["SD"]
+        .astype(str)                      # Ensure all entries are strings
+        .replace(r"^\s*$", np.nan, regex=True)  # Replace empty strings or spaces with NaN
+    )
+    df["SD"] = pd.to_numeric(df["SD"], errors="coerce")  # Convert to float
+    filtered_df = df.dropna(subset=["SD"]).head(19)      # Take first 30 valid values
 
+    if filtered_df.empty or len(filtered_df) < 8:
+        st.error("❌ Non ci sono abbastanza valori SD validi per il calcolo.")
+        return 0, 0
+
+    valid_results_SD = filtered_df["SD"].values.astype(float)
     migliori_8 = np.sort(valid_results_SD)[:8]
 
+    # --- Compute new SD ---
     new_sd = (113 / float(sr_percorso)) * (
         int(par_percorso)
         + int(st.session_state.playing_hcp)
         - (int(st.session_state.punti_stbl) - 36)
         - float(cr_percorso)
     )
-    # Taking the SD rounded to the first decimal according to Royal & Ancient
+
     new_sd = round(new_sd, 1)
 
+    # --- Combine old and new SD values ---
     migliori_8 = np.append(migliori_8, new_sd)
-    st.write("🔍 SD values:", filtered_df["SD"].head(30))
     best_8_SD = np.sort(migliori_8)[:8]
-    
-    # Calculating the new HCP by taking the 96% of the avg(best 8)  
-    hcp_simulato = np.mean(best_8_SD)
-    hcp_simulato = round(hcp_simulato, 1)
-    # --------------------------------------- Debugging String ------------------------
-    #st.write(f"Temp String to verify calculation {new_sd}, {best_8_SD}, {hcp_simulato}")
-    # --------------------------------------- Debugging String ------------------------
+
+    # --- Compute new handicap ---
+    hcp_simulato = round(np.mean(best_8_SD), 1)
+
+    # Optional debug output
+    st.write("✅ Debug:", {
+        "new_sd": new_sd,
+        "best_8_SD": best_8_SD.tolist(),
+        "hcp_simulato": hcp_simulato
+    })
 
     return new_sd, hcp_simulato
