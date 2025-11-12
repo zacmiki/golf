@@ -13,10 +13,10 @@ def fig_companion():
         "Scatter Plot": "scatter",
     }
 
-    relevant_columns = ["Date_String", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
+    relevant_columns = ["Data", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
     strippeddf = st.session_state.df[relevant_columns].copy()
     strippeddf = strippeddf.rename(columns={"Index Nuovo": "New EGA"})
-    strippeddf = strippeddf.rename(columns={"Date_String": "Date"})
+    strippeddf = strippeddf.rename(columns={"Data": "Date"})
 
     st.title("Official FederGolf Results ⛳️")
     st.divider()
