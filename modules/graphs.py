@@ -135,8 +135,8 @@ def plot_last_n(n: int, plot_type="line", new_handicap=None) -> None:
     ax.minorticks_off()
     ax.tick_params(axis="x", rotation=45)
     ax.tick_params(axis="y", which="both", length=0)  # Remove y-axis ticks
-    ax.set_xticks(range(0, len(last_n_results["Date_String"][::-1]), 2))
-    ax.set_xticklabels(last_n_results["Date_String"][::-1].iloc[::2])
+    ax.set_xticks(range(0, len(last_n_results["Data"][::-1]), 2))
+    ax.set_xticklabels(last_n_results["Data"][::-1].iloc[::2])
 
     ax.set_ylim(
         last_n_results["Index Nuovo"].min() - 0.2,
