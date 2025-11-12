@@ -83,23 +83,23 @@ def get_course_value(all_courses):
 def new_hcp(sr_percorso, cr_percorso, par_percorso):
     df = st.session_state.df.copy()
 
-    # --- Clean SD column ---
+    # Clean SD column
     df["SD"] = df["SD"].astype(str).replace(r"^\s*$", np.nan, regex=True)
     df["SD"] = pd.to_numeric(df["SD"], errors="coerce")
 
-    # --- Take last 20 valid SDs ---
-    valid_sd_df = df.dropna(subset=["SD"]).tail(20)  # last 20 valid rounds
+    # Take last 20 valid SDs (latest rounds)
+    valid_sd_df = df.dropna(subset=["SD"]).tail(20)  
 
     if valid_sd_df.empty or len(valid_sd_df) < 1:
-        st.error("❌ Non ci sono abbastanza valori SD validi.")
+        st.error("❌ Not enough valid SDs for calculation.")
         return 0, 0
 
     valid_results_SD = valid_sd_df["SD"].values.astype(float)
 
-    # --- Best 8 from last 20 valid ---
+    # Best 8 of the last 20 valid rounds
     best_8_SD = np.sort(valid_results_SD)[:8]
 
-    # --- Compute new SD ---
+    # Compute new SD
     new_sd = (113 / float(sr_percorso)) * (
         int(par_percorso)
         + int(st.session_state.playing_hcp)
@@ -108,10 +108,10 @@ def new_hcp(sr_percorso, cr_percorso, par_percorso):
     )
     new_sd = round(new_sd, 1)
 
-    # --- Include new SD and recompute best 8 ---
+    # Include new SD and recalc best 8
     best_8_SD = np.sort(np.append(best_8_SD, new_sd))[:8]
 
-    # --- Handicap calculation ---
+    # Handicap
     hcp_simulato = round(np.mean(best_8_SD), 1)
 
     st.write("✅ Debug:", {
