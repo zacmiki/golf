@@ -57,10 +57,10 @@ def hcp_sim():
 
 # This needs to be fixed
 def get_course_value(all_courses):
-    st.write("🔍 Available columns:", list(all_courses.columns))
-    st.write("🔍 Example row:", all_courses.head(1))
-    st.write("🔍 Looking for Circolo:", st.session_state.circolo)
-    st.write("🔍 Looking for Percorso:", st.session_state.percorso)
+    #st.write("🔍 Available columns:", list(all_courses.columns))
+    #st.write("🔍 Example row:", all_courses.head(1))
+    #st.write("🔍 Looking for Circolo:", st.session_state.circolo)
+    #st.write("🔍 Looking for Percorso:", st.session_state.percorso)
 
     filtered_df = all_courses[
         (all_courses["Circolo"] == st.session_state.circolo)
@@ -114,11 +114,11 @@ def new_hcp(sr_percorso, cr_percorso, par_percorso):
     # Compute simulated handicap
     hcp_simulato = round(np.mean(best_8_SD), 1)
 
-    st.write("✅ Debug:", {
-        "latest_20_valid_SD": valid_results_SD.tolist(),
-        "best_8_SD": best_8_SD.tolist(),
-        "new_sd": new_sd,
-        "hcp_simulato": hcp_simulato
-    })
+    #st.write("✅ Debug:", {
+        #"latest_20_valid_SD": valid_results_SD.tolist(),
+        #"best_8_SD": best_8_SD.tolist(),
+        #"new_sd": new_sd,
+        #"hcp_simulato": hcp_simulato
+    #})
 
     return new_sd, hcp_simulato
