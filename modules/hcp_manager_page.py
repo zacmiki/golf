@@ -1,11 +1,10 @@
 import streamlit as st
 import pandas as pd
 
-
 @st.cache_data
 def load_coursetable(df):
     filtered_df = df.dropna(subset=["SD"]).head(20).copy()
-
+    
     # Make sure SD is numeric (handle both '.' and ',' decimal separators)
     filtered_df["SD"] = (
         filtered_df["SD"]
