@@ -90,7 +90,7 @@ def plot_last_n(n: int, plot_type="line", new_handicap=None) -> None:
 
     elif plot_type == "line":
         ax.plot(
-            last_n_results["Date_String"][::-1],
+            last_n_results["Data"][::-1],
             last_n_results["Index Nuovo"][::-1],
             linestyle="-",
             marker="o",
