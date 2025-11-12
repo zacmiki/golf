@@ -83,21 +83,21 @@ def get_course_value(all_courses):
 def new_hcp(sr_percorso, cr_percorso, par_percorso):
     df = st.session_state.df.copy()
 
-    # --- Clean and prepare the SD column ---
-    df["SD"] = (
-        df["SD"]
-        .astype(str)                      # Ensure all entries are strings
-        .replace(r"^\s*$", np.nan, regex=True)  # Replace empty strings or spaces with NaN
-    )
-    df["SD"] = pd.to_numeric(df["SD"], errors="coerce")  # Convert to float
-    filtered_df = df.dropna(subset=["SD"]).head(19)      # Take first 30 valid values
+    # --- Clean SD column ---
+    df["SD"] = df["SD"].astype(str).replace(r"^\s*$", np.nan, regex=True)
+    df["SD"] = pd.to_numeric(df["SD"], errors="coerce")
 
-    if filtered_df.empty or len(filtered_df) < 8:
-        st.error("❌ Non ci sono abbastanza valori SD validi per il calcolo.")
+    # --- Take last 20 valid SDs ---
+    valid_sd_df = df.dropna(subset=["SD"]).tail(20)  # last 20 valid rounds
+
+    if valid_sd_df.empty or len(valid_sd_df) < 1:
+        st.error("❌ Non ci sono abbastanza valori SD validi.")
         return 0, 0
 
-    valid_results_SD = filtered_df["SD"].values.astype(float)
-    migliori_8 = np.sort(valid_results_SD)[:8]
+    valid_results_SD = valid_sd_df["SD"].values.astype(float)
+
+    # --- Best 8 from last 20 valid ---
+    best_8_SD = np.sort(valid_results_SD)[:8]
 
     # --- Compute new SD ---
     new_sd = (113 / float(sr_percorso)) * (
@@ -106,20 +106,18 @@ def new_hcp(sr_percorso, cr_percorso, par_percorso):
         - (int(st.session_state.punti_stbl) - 36)
         - float(cr_percorso)
     )
-
     new_sd = round(new_sd, 1)
 
-    # --- Combine old and new SD values ---
-    migliori_8 = np.append(migliori_8, new_sd)
-    best_8_SD = np.sort(migliori_8)[:8]
+    # --- Include new SD and recompute best 8 ---
+    best_8_SD = np.sort(np.append(best_8_SD, new_sd))[:8]
 
-    # --- Compute new handicap ---
+    # --- Handicap calculation ---
     hcp_simulato = round(np.mean(best_8_SD), 1)
 
-    # Optional debug output
     st.write("✅ Debug:", {
-        "new_sd": new_sd,
+        "last_20_valid_SD": valid_results_SD.tolist(),
         "best_8_SD": best_8_SD.tolist(),
+        "new_sd": new_sd,
         "hcp_simulato": hcp_simulato
     })
 
