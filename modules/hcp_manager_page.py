@@ -4,11 +4,6 @@ import pandas as pd
 
 @st.cache_data
 def load_coursetable(df):
-    # -------------------------
-    # PREPROCESSING
-    # -------------------------
-
-    # Keep only the first 20 valid (non-NaN) SD values
     filtered_df = df.dropna(subset=["SD"]).head(20).copy()
 
     # Make sure SD is numeric (handle both '.' and ',' decimal separators)
