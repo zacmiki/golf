@@ -36,7 +36,7 @@ def load_coursetable(df):
     # -------------------------
     strippeddf = strippeddf.rename(columns={
         "Index Nuovo": "New EGA",
-        "Date_String": "Date"
+        "Data": "Date"
     })
 
     # -------------------------
