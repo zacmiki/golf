@@ -14,6 +14,11 @@ def load_coursetable(df: pd.DataFrame):
 
     # Filter the DataFrame to select the first 20 elements where 'SD' is not NaN
     filtered_df = df.dropna(subset=["SD"]).head(20)
+
+    # 🔧 Ensure numeric type for SD
+    filtered_df["SD"] = pd.to_numeric(filtered_df["SD"], errors="coerce")
+
+    #relevant_columns = ["Date_String", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
     relevant_columns = ["Data", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
     
     # Define the columns you want to display
