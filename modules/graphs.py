@@ -62,58 +62,41 @@ def fig_companion():
 
 # Cache this result to avoid recomputing it every time
 #@st.cache_data
-def plot_last_n(n: int, plot_type="line", new_handicap=None) -> None:
+def plot_last_n(n: int, plot_type="line", new_handicap=None):
+    import matplotlib.pyplot as plt
+    import pandas as pd
+
     fig, ax = plt.subplots(figsize=(12, 7))
 
-    # Take last n valid rows (drop missing SD or Index Nuovo)
-    last_n_results = st.session_state.df.dropna(subset=["Index Nuovo", "Data"]).tail(n).copy()
-
-    # Ensure Data column is string
+    # Take latest n valid rounds (SD not NaN)
+    last_n_results = st.session_state.df.dropna(subset=["SD"]).head(n).copy()
     last_n_results["Data"] = last_n_results["Data"].astype(str)
 
-    # Append a new handicap if provided
+    # Append new handicap if provided
     if new_handicap is not None:
         new_row = pd.DataFrame({"Data": ["New"], "Index Nuovo": [new_handicap]})
-        last_n_results = pd.concat([last_n_results, new_row], ignore_index=True)
+        last_n_results = pd.concat([new_row, last_n_results], ignore_index=True)
 
-    x_values = last_n_results["Data"][::-1]
-    y_values = last_n_results["Index Nuovo"][::-1]
+    x_values = last_n_results["Data"]
+    y_values = last_n_results["Index Nuovo"]
 
-    if plot_type == "scatter":
-        # Normalize sizes for scatter plot
-        sizes = (y_values - y_values.min()) / (y_values.max() - y_values.min()) * 1000 + 50
-        ax.scatter(x_values, y_values, s=sizes, c="blue")
-        ax.grid(True)
+    ax.plot(x_values, y_values, linestyle="-", marker="o", markersize=8)
+    ax.fill_between(x_values, y_values, color="skyblue", alpha=0.3)
+    ax.grid(True)
 
-    elif plot_type == "line":
-        ax.plot(x_values, y_values, linestyle="-", marker="o", markersize=10)
-        ax.fill_between(x_values, y_values, color="skyblue", alpha=0.5)
-        ax.grid(True)
-
-    elif plot_type == "bar":
-        ax.bar(x_values, y_values, color="skyblue", edgecolor="black", alpha=0.5)
-
-    # Highlight the new handicap in red if provided
+    # Highlight new handicap
     if new_handicap is not None:
-        ax.plot(x_values.iloc[-1], y_values.iloc[-1], "ro", markersize=12)
-        ax.axvline(x=len(x_values) - 1, color="red", linestyle="--", linewidth=2)
+        ax.plot(x_values.iloc[0], y_values.iloc[0], "ro", markersize=12)
+        ax.axvline(x=0, color="red", linestyle="--", linewidth=2)
 
-    ax.set_title(f"EGA Handicap for last {n} Rounds", fontsize=16)
-    ax.set_ylabel("EGA", fontsize=16)
-    ax.minorticks_off()
+    ax.set_title(f"EGA Handicap - Last {n} Valid Rounds", fontsize=16)
+    ax.set_ylabel("Index Nuovo", fontsize=14)
     ax.tick_params(axis="x", rotation=45)
-    ax.tick_params(axis="y", which="both", length=0)
-
-    ax.set_xticks(range(0, len(x_values), max(1, len(x_values)//10)))
-    ax.set_xticklabels(x_values.iloc[::max(1, len(x_values)//10)])
-
-    ax.set_ylim(
-        y_values.min() - 0.2,
-        max(y_values.max(), new_handicap if new_handicap is not None else y_values.max()) + 0.2
-    )
+    ax.set_ylim(y_values.min() - 0.2, max(y_values.max(), new_handicap if new_handicap else y_values.max()) + 0.2)
 
     plt.tight_layout()
     st.pyplot(fig)
+
 
 # ------- Histogram with Gaussian Fit
 #st.cache_data
