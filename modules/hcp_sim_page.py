@@ -34,8 +34,8 @@ def hcp_sim():
         new_sd, hcp_simulato = new_hcp(sr, cr, per_percorso)
         
         st.info(
-        f"\n\n##### Handicap Calcolato: {hcp_simulato: .2f}"
-        + f"\n\n##### SD Calcolato: {new_sd: .2f}",
+        f"\n\n##### New Handicap: {hcp_simulato: .2f}"
+        + f"\n\n##### Last Round SD: {new_sd: .2f}",
         )
 
         st.success(
