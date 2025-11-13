@@ -41,11 +41,12 @@ def fig_companion():
 
     # st.subheader("Plot of your Handicap progression")
     st.markdown(f"##### Your handicap progression: last {slider_value} results:")
-    plot_type_options = list(plot_type_mapping.keys())
-    selected_plot_type = st.selectbox("Choose a plot type", plot_type_options)
+    #plot_type_options = list(plot_type_mapping.keys())
+    #selected_plot_type = st.selectbox("Choose a plot type", plot_type_options)
 
     plot_last_n(
-        slider_value, plot_type=plot_type_mapping.get(selected_plot_type, "line")
+        #slider_value, plot_type=plot_type_mapping.get(selected_plot_type, "line")
+        slider_value, plot_type="line"
     )
 
     # st.header("Strokes in the Last {} Rounds".format(slider_value))
