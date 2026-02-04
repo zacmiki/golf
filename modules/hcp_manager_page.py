@@ -7,7 +7,12 @@ def load_coursetable(df):
     # -------------------------
     # PREPROCESSING
     # -------------------------
-
+    
+    # 1. REMOVE INVALID FORMULAS FIRST
+    # We do this before head(20) so we don't "waste" slots on L4M/L2M
+    exclude_list = ["L4M", "L2M"]
+    df = df[~df["Formula"].isin(exclude_list)].copy()
+    
     # Keep only the first 20 valid (non-NaN) SD values
     filtered_df = df.dropna(subset=["SD"]).head(20).copy()
 
@@ -20,7 +25,10 @@ def load_coursetable(df):
     filtered_df["SD"] = pd.to_numeric(filtered_df["SD"], errors="coerce")
 
     # Select relevant columns
-    relevant_columns = ["Data", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
+    
+    #relevant_columns = ["Data", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
+    relevant_columns = ["Data", "Gara", "Stbl", "Formula", "SD", "Index Nuovo"]
+
     strippeddf = filtered_df[relevant_columns].copy().reset_index(drop=True)
 
     # -------------------------
