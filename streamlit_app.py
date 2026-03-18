@@ -3,10 +3,8 @@ import streamlit as st
 from modules.graphs import fig_companion
 from modules.hcp_manager_page import load_coursetable
 from modules.hcp_sim_page import hcp_sim
+from modules.login_federgolf_selenium import extract_data, login
 from modules.playing_hcp_page import playing_hcp
-
-# Import the new login/extract_data module
-from modules.login_federgolf_selenium import login, extract_data  # updated module
 
 st.set_page_config(layout="wide")
 
@@ -107,9 +105,8 @@ def main():
         ]:
             if "df" not in st.session_state or st.session_state.df is None:
                 with st.spinner("Fetching data..."):
-                    st.session_state.df = extract_data(
-                        st.session_state.federgolf_session
-                    )
+                    session = st.session_state.get("federgolf_session")
+                    st.session_state.df = extract_data(session)
 
         # -------------------------
         # Render pages

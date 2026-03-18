@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Optional
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -5,7 +9,7 @@ import streamlit as st
 from scipy.stats import norm
 
 
-def fig_companion():
+def fig_companion() -> None:
     relevant_columns = ["Data", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
     strippeddf = st.session_state.df[relevant_columns].copy()
     strippeddf = strippeddf.rename(columns={"Index Nuovo": "New EGA"})
@@ -21,7 +25,9 @@ def fig_companion():
     with col1:
         st.markdown(f"##### 🏌️ {st.session_state.df['Tesserato'][0]}")
     with col2:
-        st.success(f"Current HCP: **{current_handicap}** | Best: **{best_handicap}**")
+        st.success(
+            f"Current HCP: **{current_handicap:.1f}** | Best: **{best_handicap:.1f}**"
+        )
 
     st.markdown("#### Select number of results")
 
@@ -52,7 +58,7 @@ def fig_companion():
     )
 
 
-def plot_last_n(n: int, new_handicap=None):
+def plot_last_n(n: int, new_handicap: Optional[float] = None) -> None:
     last_n_results = st.session_state.df.dropna(subset=["SD"]).head(n).copy()
     last_n_results = last_n_results.iloc[::-1].reset_index(drop=True)
 
@@ -116,7 +122,7 @@ def plot_last_n(n: int, new_handicap=None):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def histo_n(plot_gaussian: bool = True, num_results: int = 100):
+def histo_n(plot_gaussian: bool = True, num_results: int = 100) -> None:
     filtered_data = st.session_state.df["AGS"].dropna().replace(0, np.nan).dropna()
     last_n_values = filtered_data.iloc[:num_results]
 
@@ -199,7 +205,7 @@ def histo_n(plot_gaussian: bool = True, num_results: int = 100):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def plot_handicap_by_date(n: int, new_handicap=None):
+def plot_handicap_by_date(n: int, new_handicap: Optional[float] = None) -> None:
     last_n_results = st.session_state.df.dropna(subset=["SD"]).head(n).copy()
     last_n_results = last_n_results.iloc[::-1].reset_index(drop=True)
 

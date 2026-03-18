@@ -3,30 +3,26 @@ import pandas as pd
 
 
 @st.cache_data
-def load_coursetable(df):
+def load_coursetable(df: pd.DataFrame) -> None:
     # -------------------------
     # PREPROCESSING
     # -------------------------
-    
+
     # 1. REMOVE INVALID FORMULAS FIRST
     # We do this before head(20) so we don't "waste" slots on L4M/L2M
     exclude_list = ["L4M", "L2M"]
     df = df[~df["Formula"].isin(exclude_list)].copy()
-    
+
     # Keep only the first 20 valid (non-NaN) SD values
     filtered_df = df.dropna(subset=["SD"]).head(20).copy()
 
     # Make sure SD is numeric (handle both '.' and ',' decimal separators)
-    filtered_df["SD"] = (
-        filtered_df["SD"]
-        .astype(str)
-        .str.replace(",", ".", regex=False)
-    )
+    filtered_df["SD"] = filtered_df["SD"].astype(str).str.replace(",", ".", regex=False)
     filtered_df["SD"] = pd.to_numeric(filtered_df["SD"], errors="coerce")
 
     # Select relevant columns
-    
-    #relevant_columns = ["Data", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
+
+    # relevant_columns = ["Data", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
     relevant_columns = ["Data", "Gara", "Stbl", "Formula", "SD", "Index Nuovo"]
 
     strippeddf = filtered_df[relevant_columns].copy().reset_index(drop=True)
@@ -42,10 +38,7 @@ def load_coursetable(df):
     # -------------------------
     # RENAME COLUMNS
     # -------------------------
-    strippeddf = strippeddf.rename(columns={
-        "Index Nuovo": "New EGA",
-        "Data": "Date"
-    })
+    strippeddf = strippeddf.rename(columns={"Index Nuovo": "New EGA", "Data": "Date"})
 
     # -------------------------
     # PAGE LAYOUT
@@ -58,7 +51,7 @@ def load_coursetable(df):
 
     st.success(
         f"""
-        #### 🏌️ Tesserato {df['Tesserato'].iloc[0]}
+        #### 🏌️ Tesserato {df["Tesserato"].iloc[0]}
         #### ⛳️ Current HCP: {current_handicap:.1f}  
         #### ⛳️ Best HCP: {best_handicap:.1f}
         """
@@ -78,7 +71,7 @@ def load_coursetable(df):
 
     st.info(
         f"""Apparently you have **{20 - max_index}** games to play before you lose your next valid round, which is  
-    	{highest_indexed_element['Gara']} — Stbl = {highest_indexed_element['Stbl']} — SD = {highest_indexed_element['SD']:.1f}"""
+    	{highest_indexed_element["Gara"]} — Stbl = {highest_indexed_element["Stbl"]} — SD = {highest_indexed_element["SD"]:.1f}"""
     )
     st.divider()
 

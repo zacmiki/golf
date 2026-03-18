@@ -1,198 +1,107 @@
+from __future__ import annotations
+
+from typing import Optional
+
 import pandas as pd
 import requests
 import streamlit as st
 from bs4 import BeautifulSoup
 
-from .login_federgolf import generate_headers
+from .federgolf_client import (
+    BASE_URL,
+    COURSE_HCP_URL,
+    TEE_COLORS,
+    build_cookies,
+    calc_request_payload,
+    fetch_course_hcp_page,
+    generate_headers,
+    store_session_cookies,
+)
+
+VALID_ROUNDS = 20
 
 
-# Function to perform the additional requests
-def handicap_request():
-    url = "http://areariservata.federgolf.it/CourseHandicapCalc/Index"
-    headers = {
-        "Sec-Ch-Ua": '"Not-A.Brand";v="99", "Chromium";v="124"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": '"macOS"',
-        "Upgrade-Insecure-Requests": "1",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.118 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-User": "?1",
-        "Sec-Fetch-Dest": "document",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
-        "Priority": "u=0, i",
-        "Connection": "close",
-    }
+def handicap_request() -> None:
+    response, token = fetch_course_hcp_page()
+    if response is None:
+        st.error("Failed to load course handicap page.")
+        return
 
-    response = requests.get(url, headers=headers)
-
-    if response.status_code != 200:
-        return False
-
-    # Get the info from the html for the new antiforgery token since it changes every time we have to get the new one
-    # ----------------------------------------
-    # Parse the HTML content using BeautifulSoup
-    soup = BeautifulSoup(response.text, "html.parser")
-    antiforgery_token = ""
-    # Find all script tags in the HTML
-    script_tags = soup.find_all("script")
-
-    # Loop through each script tag to find antiforgeryToken
-    for script_tag in script_tags:
-        script_content = script_tag.string
-        if script_content and "antiforgeryToken" in script_content:
-            # Extract the value of antiforgeryToken
-            antiforgery_token = script_content.split('value="')[1].split('"')[0]
-            break  # Exit the loop after finding the antiforgeryToken
-
-    # Update to the latest antiforgery token for the next requests
-    st.session_state.antiforgery_token = antiforgery_token
-
-    # Get the necessaary information for the next requests from the cookies
-    # ----------------------------------------
-    request_verification_token = response.cookies.get("__RequestVerificationToken")
-    st.session_state.request_verification_token = request_verification_token
-
-    arraffinity = response.cookies.get("ARRAffinity")
-    st.session_state.arraffinity = arraffinity
-
-    arraffinity_same_site = response.cookies.get("ARRAffinitySameSite")
-    st.session_state.arraffinity_same_site = arraffinity_same_site
-
-    # Get Session id from the cookies
-    session_id = response.cookies.get("ASP.NET_SessionId", None)
-    st.session_state.session_id = session_id
-
+    st.session_state.antiforgery_token = token
+    store_session_cookies(response)
     st.subheader("Handicap Calculator")
 
-    # Get the course with the soup from before
-    # Parse the HTML content
-    # Extract Circolo options as a mapping with a dictionary for fast lookup
-    circolo_options = {}
-    options = soup.select("#ddlCircolo option")
-    for option in options:
-        name = option.text.strip()
-        value = option["value"]
-        circolo_options[name] = value
+    soup = BeautifulSoup(response.text, "html.parser")
 
+    circolo_options = {
+        opt.text.strip(): opt["value"] for opt in soup.select("#ddlCircolo option")
+    }
     selected_circolo = st.selectbox(
-        "Select Circolo Option", options=list(circolo_options.keys())
+        "Select Circolo", options=list(circolo_options.keys())
     )
-
-    # Getting the value based on the selected name
     selected_circolo_value = circolo_options[selected_circolo]
 
-    # Make the other request for the Percorso
-    url = "https://areariservata.federgolf.it/CourseHandicapCalc/Calc"
-
-    cookies = {
-        "ASP.NET_SessionId": st.session_state.session_id,
-        "__RequestVerificationToken": st.session_state.request_verification_token,
-        "ARRAffinity": st.session_state.arraffinity,
-        "ARRAffinitySameSite": st.session_state.arraffinity_same_site,
-    }
-
+    url = f"{BASE_URL}/CourseHandicapCalc/Calc"
     headers = generate_headers(
-        cookies=cookies,
-        referer="https://areariservata.federgolf.it/CourseHandicapCalc/Index",
+        cookies=build_cookies(),
+        referer=COURSE_HCP_URL,
         content_length=260,
     )
+    payload = calc_request_payload(selected_circolo_value)
 
-    data = {
-        "selectedCircolo": selected_circolo_value,
-        "SelectedPercorso": "",
-        "tee": "",
-        "hcp": "",
-        "__RequestVerificationToken": st.session_state.antiforgery_token,
+    resp = requests.post(url, headers=headers, data=payload)
+    if resp.status_code != 200:
+        st.error("Failed to fetch course data.")
+        return
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+    course_options = {
+        opt.text.strip(): opt["value"] for opt in soup.select("#ddlPercorso option")
     }
 
-    response = requests.post(url, headers=headers, data=data)
+    selected_course = st.selectbox("Select Course", options=list(course_options.keys()))
+    selected_course_value = course_options[selected_course]
+    tee_color = st.selectbox("Select Tee Color", options=TEE_COLORS)
 
-    if selected_circolo_value:
-        soup = BeautifulSoup(response.text, "html.parser")
-        course_options = {}
-        course_select = soup.select("#ddlPercorso option")
-        for option in course_select:
-            name = option.text.strip()
-            value = option["value"]
-            course_options[name] = value
+    handicap = st.session_state.df["Index Nuovo"][0]
+    st.session_state.punti_stbl = st.text_input("Punteggio Stableford")
 
-        selected_course = st.selectbox(
-            "Select Course", options=list(course_options.keys())
+    if st.button("Compute Handicap"):
+        payload = calc_request_payload(
+            selected_circolo_value,
+            selected_course_value,
+            tee_color,
+            str(handicap),
         )
+        resp = requests.post(url, headers=headers, data=payload)
 
-        selected_course_value = course_options[selected_course]
-        tee_color = st.selectbox(
-            "Select Tee Color",
-            options=["Bianco", "Giallo", "Verde", "Blu", "Rosso", "Arancio"],
-        )
+        playing_hcp: Optional[str] = None
+        soup = BeautifulSoup(resp.text, "html.parser")
+        table = soup.find("table", id="risultatiHCP")
+        if table:
+            for row in table.find_all("tr"):
+                cols = row.find_all("td")
+                if cols:
+                    playing_hcp = cols[4].get_text(strip=True)
 
-        handicap = st.session_state.df["Index Nuovo"][0]
-
-        # Get punti_stbl from user
-        st.session_state.punti_stbl = st.text_input("Punteggio Stableford")
-
-        if st.button("Compute Handicap"):
-            url = "https://areariservata.federgolf.it/CourseHandicapCalc/Calc"
-
-            headers = generate_headers(
-                cookies=cookies,
-                referer="https://areariservata.federgolf.it/CourseHandicapCalc/Index",
-                content_length=260,
-            )
-
-            data = {
-                "selectedCircolo": selected_circolo_value,
-                "SelectedPercorso": selected_course_value,
-                "tee": tee_color,
-                "hcp": handicap,
-                "__RequestVerificationToken": st.session_state.antiforgery_token,
-            }
-
-            response = requests.post(url, headers=headers, data=data)
-
-            playing_hcp = None
-            soup = BeautifulSoup(response.text, "html.parser")
-            table = soup.find("table", id="risultatiHCP")
-            rows = table.find_all("tr")
-
-            for row in rows:
-                columns = row.find_all("td")
-                if columns:
-                    playing_hcp = columns[4].get_text(strip=True)
-
-                    # Find the index of the first space after the dash
-
-            # Get the index of the dash
-            index = selected_course.index("-") + 2
-
-            # st.markdown(f"Course Handicap: {course_handicap}")
-            st.session_state.circolo = selected_circolo
-            # Extract only the second part after the dash
-            st.session_state.percorso = selected_course[index:]
-            st.session_state.tee_color = tee_color
-            st.session_state.playing_hcp = playing_hcp
+        idx = selected_course.index("-") + 2
+        st.session_state.circolo = selected_circolo
+        st.session_state.percorso = selected_course[idx:]
+        st.session_state.tee_color = tee_color
+        st.session_state.playing_hcp = playing_hcp
 
 
-@st.cache_data
-def get_allcourses():
-    # GET THE TABLE OF ALL COURSES OFFICIALLY REGISTERED TO FEDERGOLF
-    # returns - Percorso Par / SR / CR /
-
-    url = "https://areariservata.federgolf.it/SlopeAndCourseRating/Index"
-
-    # Fetch the HTML content from the URL
+@st.cache_data(ttl=86400)
+def get_allcourses() -> pd.DataFrame:
+    url = f"{BASE_URL}/SlopeAndCourseRating/Index"
     response = requests.get(url)
-    html_content = response.text
-
-    # Parse the HTML content using BeautifulSoup
-    soup = BeautifulSoup(html_content, "html.parser")
+    soup = BeautifulSoup(response.text, "html.parser")
     table = soup.find("table", class_="single-table slope responsive")
 
-    # Assuming `html_content` contains the HTML content of the table
-    html_content = """
+    if table is None:
+        return pd.DataFrame()
+
+    headers_html = """
     <tr>
     <th>Circolo</th>
     <th>Percorso</th>
@@ -213,42 +122,13 @@ def get_allcourses():
     <th align="center">Slope Arancio Donne</th>
     </tr>
     """
+    headers_soup = BeautifulSoup(headers_html, "html.parser")
+    headers_list = [th.text.strip() for th in headers_soup.find_all("th")]
 
-    # Parse the HTML content using BeautifulSoup
-    soup = BeautifulSoup(html_content, "html.parser")
+    data: list[list[str]] = []
+    for row in table.find_all("tr")[3:]:
+        cells = [td.text.strip() for td in row.find_all("td")]
+        if len(cells) == len(headers_list):
+            data.append(cells)
 
-    # Find all table rows
-    rows = soup.find_all("tr")
-
-    # Extract headers
-    headers = [th.text.strip() for th in rows[0].find_all("th")]
-
-    # Extract data rows
-    data = []
-
-    for row in rows[1:]:
-        data.append([td.text.strip() for td in row.find_all(["th", "td"])])
-
-    # Create Pandas DataFrame
-    allcourses_df = pd.DataFrame(data, columns=headers)
-
-    column_data = table.find_all("tr")
-    skippedrows = 3
-
-    for row in column_data[3:]:
-        row_data = row.find_all("td")
-        individual_row_data = [data.text.strip() for data in row_data]
-
-        if len(individual_row_data) == len(allcourses_df.columns):
-            # Add the row to the DataFrame
-            length = len(allcourses_df)
-            allcourses_df.loc[length] = individual_row_data
-        else:
-            # print(f"I had to Skip {skippedrows} row")
-            skippedrows += 1
-            continue
-
-    # st.write(f"Created and loaded a dataframe made of {len(allcourses_df)} courses")
-    # st.session_state.allcourses_df = allcourses_df
-
-    return allcourses_df
+    return pd.DataFrame(data, columns=headers_list)
