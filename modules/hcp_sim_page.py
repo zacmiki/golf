@@ -69,7 +69,8 @@ def get_course_value(all_courses):
         st.error("Course not found")
         return
 
-    tee = st.session_state.tee_color
+    tee = getattr(st.session_state, 'tee_color', st.session_state.percorso)
+    #tee = st.session_state.percorso
 
     cr_column = f"CR {tee} Uomini"
     sr_column = f"Slope {tee} Uomini"
@@ -88,46 +89,39 @@ def get_course_value(all_courses):
 # ---------------------------------------
 
 
+
 def new_hcp(sr_percorso, cr_percorso, par_percorso):
     df = st.session_state.df.copy()
 
-    # Clean SD column: convert empty/invalid to NaN
     df["SD"] = pd.to_numeric(df["SD"], errors="coerce")
 
-    # Take the 20 most recent rounds with valid SD
-    valid_sd_df = df.dropna(subset=["SD"]).head(20)
+    # ensure correct ordering (latest first)
+    if "Data" in df.columns:
+        df = df.sort_values("Data", ascending=False)
 
-    if valid_sd_df.empty:
+    valid_sd = df["SD"].dropna().head(20).values.astype(float)
+
+    if len(valid_sd) == 0:
         st.error("❌ Not enough valid SDs for calculation.")
         return 0, 0
 
-    # Take the SD values
-    valid_results_SD = valid_sd_df["SD"].values.astype(float)
-
-    # Best 8 of the latest 20 valid rounds
-    best_8_SD = np.sort(valid_results_SD)[:8]
-
-    # Compute new SD for the round being added
-    new_sd = (113 / float(sr_percorso)) * (
-        int(par_percorso)
-        + 36
-        - int(st.session_state.punti_stbl)
-        + int(st.session_state.playing_hcp)
-        - float(cr_percorso)
-    )
+    # correct WHS adjusted gross score
+    punti = st.session_state.punti_stbl
+    playing_hcp = st.session_state.playing_hcp
+    
+    punti = float(punti)
+    playing_hcp = float(playing_hcp)
+    par_percorso = float(par_percorso)
+    
+    adjusted_score = par_percorso + playing_hcp - (punti - 36)
+    
+    new_sd = (113 / float(sr_percorso)) * (adjusted_score - float(cr_percorso))
     new_sd = round(new_sd, 1)
 
-    # Include the new SD in the best 8 calculation
-    best_8_SD = np.sort(np.append(best_8_SD, new_sd))[:8]
+    # WHS logic: take last 20 + new → best 8
+    all_sd = np.append(valid_sd, new_sd)
+    best_8 = np.sort(all_sd)[:8]
 
-    # Compute simulated handicap (best 8 of 20, with 0.96 bonus for excellence)
-    hcp_simulato = round(np.mean(best_8_SD) * 0.96, 1)
-
-    # st.write("✅ Debug:", {
-    # "latest_20_valid_SD": valid_results_SD.tolist(),
-    # "best_8_SD": best_8_SD.tolist(),
-    # "new_sd": new_sd,
-    # "hcp_simulato": hcp_simulato
-    # })
+    hcp_simulato = round(np.mean(best_8), 1)
 
     return new_sd, hcp_simulato
