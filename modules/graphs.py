@@ -227,7 +227,7 @@ def plot_handicap_by_date(n: int, new_handicap: Optional[float] = None) -> None:
     y_max = last_n_results["Index Nuovo"].max() + 1
 
     fig.update_layout(
-        title=dict(text=f"Handicap Progression", font=dict(size=18)),
+        title=dict(text="Handicap Progression", font=dict(size=18)),
         yaxis=dict(title="EGA Handicap", range=[y_min, y_max], gridcolor="lightgray"),
         xaxis=dict(
             title="Date",
@@ -239,6 +239,75 @@ def plot_handicap_by_date(n: int, new_handicap: Optional[float] = None) -> None:
         showlegend=False,
         margin=dict(t=60, b=60),
         height=400,
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def plot_scenarios_comparison(
+    n: int,
+    scenario_hcps: list[float],
+    scenario_labels: list[str],
+    scenario_colors: list[str],
+) -> None:
+    last_n_results = st.session_state.df.dropna(subset=["SD"]).head(n).copy()
+    last_n_results = last_n_results.iloc[::-1].reset_index(drop=True)
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(
+            x=list(range(1, len(last_n_results) + 1)),
+            y=last_n_results["Index Nuovo"],
+            mode="lines+markers",
+            name="Historical",
+            line=dict(color="#2E86AB", width=3),
+            marker=dict(size=10, color="#2E86AB", line=dict(color="white", width=2)),
+            hovertemplate="Round %{x}<br>HCP: %{y:.1f}<extra></extra>",
+        )
+    )
+
+    n_rounds = len(last_n_results)
+    all_hcps = list(last_n_results["Index Nuovo"]) + scenario_hcps
+    y_min = min(all_hcps) - 1
+    y_max = max(all_hcps) + 1
+
+    scenario_x_start = n_rounds + 1
+    for i, (hcp, label) in enumerate(zip(scenario_hcps, scenario_labels)):
+        x_pos = scenario_x_start + i * 0.3
+        fig.add_trace(
+            go.Scatter(
+                x=[x_pos],
+                y=[hcp],
+                mode="markers",
+                name=f"⛳️ {label}",
+                marker=dict(
+                    size=16,
+                    color=scenario_colors[i],
+                    symbol="circle",
+                    line=dict(color="white", width=2),
+                ),
+                hovertemplate=f"{label}<br>New HCP: {hcp:.1f}<extra></extra>",
+            )
+        )
+
+    fig.update_layout(
+        title=dict(
+            text="Handicap Progression with Scenario Projections", font=dict(size=18)
+        ),
+        yaxis=dict(title="EGA Handicap", range=[y_min, y_max], gridcolor="lightgray"),
+        xaxis=dict(
+            title="Round",
+            range=[0.5, scenario_x_start + len(scenario_hcps) * 0.3 + 0.5],
+            tickvals=list(range(1, n_rounds + 1)),
+            ticktext=[str(x) for x in range(1, n_rounds + 1)],
+            gridcolor="lightgray",
+        ),
+        plot_bgcolor="white",
+        hovermode="x unified",
+        legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1),
+        margin=dict(t=60, b=60),
+        height=450,
     )
 
     st.plotly_chart(fig, use_container_width=True)
