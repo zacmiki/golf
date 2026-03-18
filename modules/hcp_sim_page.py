@@ -109,18 +109,15 @@ def new_hcp(sr_percorso, cr_percorso, par_percorso):
 
     # Compute new SD for the round being added
     new_sd = (113 / float(sr_percorso)) * (
-        int(par_percorso)
-        + int(st.session_state.playing_hcp)
-        - (int(st.session_state.punti_stbl) - 36)
-        - float(cr_percorso)
+        int(par_percorso) + 36 - int(st.session_state.punti_stbl) - float(cr_percorso)
     )
     new_sd = round(new_sd, 1)
 
     # Include the new SD in the best 8 calculation
     best_8_SD = np.sort(np.append(best_8_SD, new_sd))[:8]
 
-    # Compute simulated handicap
-    hcp_simulato = round(np.mean(best_8_SD), 1)
+    # Compute simulated handicap (best 8 of 20, with 0.96 bonus for excellence)
+    hcp_simulato = round(np.mean(best_8_SD) * 0.96, 1)
 
     # st.write("✅ Debug:", {
     # "latest_20_valid_SD": valid_results_SD.tolist(),
