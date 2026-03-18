@@ -41,6 +41,9 @@ def fig_companion():
         pass
     histo_n(plot_gaussian, slider_value)
 
+    st.markdown("#### Handicap Progression by Date")
+    plot_handicap_by_date(slider_value)
+
     st.markdown(f"### Detail of the last {slider_value} rounds:")
     st.dataframe(
         strippeddf.iloc[:slider_value].style.format(precision=1),
@@ -96,7 +99,7 @@ def plot_last_n(n: int, new_handicap=None):
 
     fig.update_layout(
         title=dict(text=f"EGA Handicap - Last {n} Valid Rounds", font=dict(size=18)),
-        yaxis=dict(title="Index Nuovo", range=[y_min, y_max], gridcolor="lightgray"),
+        yaxis=dict(title="EGA Handicap", range=[y_min, y_max], gridcolor="lightgray"),
         xaxis=dict(
             title="Round",
             range=[0.5, x_max + 0.5],
@@ -105,8 +108,7 @@ def plot_last_n(n: int, new_handicap=None):
         ),
         plot_bgcolor="white",
         hovermode="x unified",
-        showlegend=True,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        showlegend=False,
         margin=dict(t=60, b=60),
         height=450,
     )
@@ -192,6 +194,45 @@ def histo_n(plot_gaussian: bool = True, num_results: int = 100):
         height=400,
         bargap=0.1,
         annotations=annotations,
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def plot_handicap_by_date(n: int, new_handicap=None):
+    last_n_results = st.session_state.df.dropna(subset=["SD"]).head(n).copy()
+    last_n_results = last_n_results.iloc[::-1].reset_index(drop=True)
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(
+            x=last_n_results["Data"],
+            y=last_n_results["Index Nuovo"],
+            mode="lines+markers",
+            name="EGA Handicap",
+            line=dict(color="#2E86AB", width=3),
+            marker=dict(size=8, color="#2E86AB", line=dict(color="white", width=2)),
+            hovertemplate="Date: %{x}<br>EGA Handicap: %{y:.1f}<extra></extra>",
+        )
+    )
+
+    y_min = last_n_results["Index Nuovo"].min() - 1
+    y_max = last_n_results["Index Nuovo"].max() + 1
+
+    fig.update_layout(
+        title=dict(text=f"Handicap Progression", font=dict(size=18)),
+        yaxis=dict(title="EGA Handicap", range=[y_min, y_max], gridcolor="lightgray"),
+        xaxis=dict(
+            title="Date",
+            tickangle=45,
+            gridcolor="lightgray",
+        ),
+        plot_bgcolor="white",
+        hovermode="x unified",
+        showlegend=False,
+        margin=dict(t=60, b=60),
+        height=400,
     )
 
     st.plotly_chart(fig, use_container_width=True)
