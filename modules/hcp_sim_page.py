@@ -109,7 +109,11 @@ def new_hcp(sr_percorso, cr_percorso, par_percorso):
 
     # Compute new SD for the round being added
     new_sd = (113 / float(sr_percorso)) * (
-        int(par_percorso) + 36 - int(st.session_state.punti_stbl) - float(cr_percorso)
+        int(par_percorso)
+        + 36
+        - int(st.session_state.punti_stbl)
+        + int(st.session_state.playing_hcp)
+        - float(cr_percorso)
     )
     new_sd = round(new_sd, 1)
 
