@@ -49,7 +49,7 @@ def hcp_sim() -> None:
         return
 
     punti = st.number_input(
-        "⛳️ INPUT YOUR STABLEFORD SCORE", min_value=1, max_value=54, value=36,step=1
+        "⛳️ INPUT YOUR STABLEFORD SCORE", min_value=1, max_value=54, value=36, step=1
     )
 
     assert cr is not None and par is not None
@@ -233,15 +233,21 @@ def new_hcp(
     if "Data" in df.columns:
         df = df.sort_values("Data", ascending=False)
 
+    if "Valida" in df.columns:
+        df = df[df["Valida"] == "S"]
+
     valid_sd = df["SD"].dropna().head(VALID_ROUNDS).values.astype(float)
 
     if len(valid_sd) == 0:
         st.error("Not enough valid SDs for calculation.")
         return 0.0, 0.0
 
-    playing_hcp = float(st.session_state.df["Index Nuovo"][0])
+    if "Playing HCP" in st.session_state.df.columns:
+        playing_hcp = float(st.session_state.df["Playing HCP"].iloc[0])
+    else:
+        playing_hcp = float(st.session_state.df["Index Nuovo"][0])
 
-    adjusted_score = par_percorso + playing_hcp - (punti - 36)
+    adjusted_score = int(par_percorso + playing_hcp - (punti - 36))
     new_sd = (113 / sr_percorso) * (adjusted_score - cr_percorso)
     new_sd = round(new_sd, 1)
 

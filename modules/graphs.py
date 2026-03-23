@@ -119,7 +119,25 @@ def plot_last_n(n: int, new_handicap: Optional[float] = None) -> None:
         height=450,
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={
+            "modeBarButtonsToRemove": [
+                "zoom",
+                "zoomIn",
+                "zoomOut",
+                "pan",
+                "autoScale",
+                "resetScale",
+                "select2d",
+                "lasso2d",
+                "hoverClosestCartesian",
+                "hoverCompareCartesian",
+                "toggleSpikelines",
+            ],
+        },
+    )
 
 
 def histo_n(plot_gaussian: bool = True, num_results: int = 100) -> None:
@@ -202,7 +220,25 @@ def histo_n(plot_gaussian: bool = True, num_results: int = 100) -> None:
         annotations=annotations,
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={
+            "modeBarButtonsToRemove": [
+                "zoom",
+                "zoomIn",
+                "zoomOut",
+                "pan",
+                "autoScale",
+                "resetScale",
+                "select2d",
+                "lasso2d",
+                "hoverClosestCartesian",
+                "hoverCompareCartesian",
+                "toggleSpikelines",
+            ],
+        },
+    )
 
 
 def plot_handicap_by_date(n: int, new_handicap: Optional[float] = None) -> None:
@@ -241,7 +277,25 @@ def plot_handicap_by_date(n: int, new_handicap: Optional[float] = None) -> None:
         height=400,
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={
+            "modeBarButtonsToRemove": [
+                "zoom",
+                "zoomIn",
+                "zoomOut",
+                "pan",
+                "autoScale",
+                "resetScale",
+                "select2d",
+                "lasso2d",
+                "hoverClosestCartesian",
+                "hoverCompareCartesian",
+                "toggleSpikelines",
+            ],
+        },
+    )
 
 
 def plot_scenarios_comparison(
@@ -310,4 +364,22 @@ def plot_scenarios_comparison(
         height=450,
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={
+            "modeBarButtonsToRemove": [
+                "zoom",
+                "zoomIn",
+                "zoomOut",
+                "pan",
+                "autoScale",
+                "resetScale",
+                "select2d",
+                "lasso2d",
+                "hoverClosestCartesian",
+                "hoverCompareCartesian",
+                "toggleSpikelines",
+            ],
+        },
+    )
