@@ -236,7 +236,7 @@ def new_hcp(
     if "Valida" in df.columns:
         df = df[df["Valida"] == "S"]
 
-    valid_sd = df["SD"].dropna().head(VALID_ROUNDS).values.astype(float)
+    valid_sd = df["SD"].dropna().head(VALID_ROUNDS - 1).values.astype(float)
 
     if len(valid_sd) == 0:
         st.error("Not enough valid SDs for calculation.")

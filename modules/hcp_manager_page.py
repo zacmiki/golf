@@ -8,12 +8,16 @@ def load_coursetable(df: pd.DataFrame) -> None:
     # PREPROCESSING
     # -------------------------
 
-    # 1. REMOVE INVALID FORMULAS FIRST
+    # 1. FILTER BY VALIDITY (Valida = 'S') if column exists
+    if "Valida" in df.columns:
+        df = df[df["Valida"] == "S"].copy()
+
+    # 2. REMOVE INVALID FORMULAS FIRST
     # We do this before head(20) so we don't "waste" slots on L4M/L2M
     exclude_list = ["L4M", "L2M"]
     df = df[~df["Formula"].isin(exclude_list)].copy()
 
-    # Keep only the first 20 valid (non-NaN) SD values
+    # 3. Keep only the first 20 valid (non-NaN) SD values
     filtered_df = df.dropna(subset=["SD"]).head(20).copy()
 
     # Make sure SD is numeric (handle both '.' and ',' decimal separators)
