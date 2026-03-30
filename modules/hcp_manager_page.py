@@ -74,7 +74,7 @@ def load_coursetable(df: pd.DataFrame) -> None:
     st.divider()
 
     st.info(
-        f"""Apparently you have **{20 - max_index}** games to play before you lose your next valid round, which is  
+        f"""Apparently you have **{19 - max_index}** games to play before you lose your next valid round, which is  
     	{highest_indexed_element["Gara"]} — Stbl = {highest_indexed_element["Stbl"]} — SD = {highest_indexed_element["SD"]:.1f}"""
     )
     st.divider()
