@@ -105,12 +105,18 @@ def plot_last_n(n: int, new_handicap: Optional[float] = None) -> None:
 
     fig.update_layout(
         title=dict(text=f"EGA Handicap - Last {n} Valid Rounds", font=dict(size=18)),
-        yaxis=dict(title="EGA Handicap", range=[y_min, y_max], gridcolor="lightgray"),
+        yaxis=dict(
+            title="EGA Handicap",
+            range=[y_min, y_max],
+            gridcolor="lightgray",
+            fixedrange=True,
+        ),
         xaxis=dict(
             title="Round",
             range=[0.5, x_max + 0.5],
             tickvals=list(range(1, x_max + 1)),
             gridcolor="lightgray",
+            fixedrange=True,
         ),
         plot_bgcolor="white",
         hovermode="x unified",
@@ -209,8 +215,9 @@ def histo_n(plot_gaussian: bool = True, num_results: int = 100) -> None:
             title="Strokes per Round",
             gridcolor="lightgray",
             range=[x_range_min, x_range_max],
+            fixedrange=True,
         ),
-        yaxis=dict(title="Frequency", gridcolor="lightgray"),
+        yaxis=dict(title="Frequency", gridcolor="lightgray", fixedrange=True),
         plot_bgcolor="white",
         showlegend=True,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
@@ -349,13 +356,19 @@ def plot_scenarios_comparison(
         title=dict(
             text="Handicap Progression with Scenario Projections", font=dict(size=18)
         ),
-        yaxis=dict(title="EGA Handicap", range=[y_min, y_max], gridcolor="lightgray"),
+        yaxis=dict(
+            title="EGA Handicap",
+            range=[y_min, y_max],
+            gridcolor="lightgray",
+            fixedrange=True,
+        ),
         xaxis=dict(
             title="Round",
             range=[0.5, scenario_x_start + len(scenario_hcps) * 0.3 + 0.5],
             tickvals=list(range(1, n_rounds + 1)),
             ticktext=[str(x) for x in range(1, n_rounds + 1)],
             gridcolor="lightgray",
+            fixedrange=True,
         ),
         plot_bgcolor="white",
         hovermode="x unified",
