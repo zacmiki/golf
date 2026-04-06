@@ -28,9 +28,18 @@ def hcp_sim() -> None:
     st.subheader("Currently working for 18 Hole Courses")
     st.divider()
 
-    current_handicap = st.session_state.df["Index Nuovo"][0]
+    tesserato_name = st.session_state.get("tesserato_name", "")
+    tesserato_num = st.session_state.df["Numero tessera"].iloc[0]
+    if tesserato_name:
+        tesserato_display = f"{tesserato_name} ({tesserato_num})"
+    else:
+        tesserato_display = f"Tessera {tesserato_num}"
+
+    current_handicap = st.session_state.get(
+        "current_handicap", st.session_state.df["Index Nuovo"][0]
+    )
     st.success(
-        f"\n\n##### 🏌️ Tesserato {st.session_state.df['Tesserato'][0]}"
+        f"\n\n##### 🏌️ {tesserato_display}"
         + f"\n\n##### ⛳️ Current HCP: {current_handicap:.1f}  ⛳️",
     )
 
@@ -242,8 +251,10 @@ def new_hcp(
         st.error("Not enough valid SDs for calculation.")
         return 0.0, 0.0
 
-    if "Playing HCP" in st.session_state.df.columns:
-        playing_hcp = float(st.session_state.df["Playing HCP"].iloc[0])
+    # Use current_handicap from profile page (most accurate)
+    current_hcp = st.session_state.get("current_handicap")
+    if current_hcp is not None:
+        playing_hcp = current_hcp
     else:
         playing_hcp = float(st.session_state.df["Index Nuovo"][0])
 

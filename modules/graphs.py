@@ -18,12 +18,19 @@ def fig_companion() -> None:
     st.title("Official FederGolf Results ⛳️")
     st.divider()
 
-    current_handicap = st.session_state.df["Index Nuovo"][0]
+    current_handicap = st.session_state.get(
+        "current_handicap", st.session_state.df["Index Nuovo"][0]
+    )
     best_handicap = st.session_state.df["Index Nuovo"].min()
 
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown(f"##### 🏌️ {st.session_state.df['Tesserato'][0]}")
+        tesserato_name = st.session_state.get("tesserato_name", "")
+        tesserato_num = st.session_state.df["Numero tessera"].iloc[0]
+        if tesserato_name:
+            st.markdown(f"##### 🏌️ {tesserato_name} ({tesserato_num})")
+        else:
+            st.markdown(f"##### 🏌️ Tessera: {tesserato_num}")
     with col2:
         st.success(
             f"Current HCP: **{current_handicap:.1f}** | Best: **{best_handicap:.1f}**"

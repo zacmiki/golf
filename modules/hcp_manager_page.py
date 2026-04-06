@@ -50,12 +50,21 @@ def load_coursetable(df: pd.DataFrame) -> None:
     st.title("Handicap Manager ⛳️")
     st.divider()
 
-    current_handicap = df["Index Nuovo"].iloc[0]
+    current_handicap = st.session_state.get(
+        "current_handicap", df["Index Nuovo"].iloc[0]
+    )
     best_handicap = df["Index Nuovo"].min()
+
+    tesserato_name = st.session_state.get("tesserato_name", "")
+    tesserato_num = df["Numero tessera"].iloc[0]
+    if tesserato_name:
+        tesserato_display = f"{tesserato_name} ({tesserato_num})"
+    else:
+        tesserato_display = f"Tessera {tesserato_num}"
 
     st.success(
         f"""
-        #### 🏌️ Tesserato {df["Tesserato"].iloc[0]}
+        #### 🏌️ {tesserato_display}
         #### ⛳️ Current HCP: {current_handicap:.1f}  
         #### ⛳️ Best HCP: {best_handicap:.1f}
         """
