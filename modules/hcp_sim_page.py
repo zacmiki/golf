@@ -12,6 +12,7 @@ from .course_hcp import get_allcourses, VALID_ROUNDS
 from .federgolf_client import (
     BASE_URL,
     COURSE_HCP_URL,
+    TEE_COLORS,
     build_cookies,
     calc_request_payload,
     generate_headers,
@@ -178,36 +179,53 @@ def select_course() -> tuple[Optional[float], Optional[float], Optional[float]]:
     if not selected_course_value:
         return None, None, None
 
-    idx = selected_course.rfind(" - ") + 3
-    percorso = selected_course[idx:] if idx > 0 else selected_course
+    # Use all tee colors (same as playing_hcp_page.py)
+    tee_color = st.selectbox("Select Tee Color", options=TEE_COLORS)
 
-    all_courses = get_allcourses()
-    filtered = all_courses[
-        (all_courses["Circolo"].str.strip() == selected_circolo.strip())
-        & (all_courses["Percorso"].str.strip() == percorso.strip())
-    ]
+    # Get CR/SR/Par by making a POST with the tee (same as playing_hcp_page.py)
+    final_payload = calc_request_payload(
+        circolo_value, selected_course_value, tee_color, "18"
+    )
+    final_resp = requests.post(url, headers=headers, data=final_payload)
 
-    if filtered.empty:
-        st.error("Course not found in database.")
+    if final_resp.status_code != 200:
+        st.error("Failed to fetch course details.")
         return None, None, None
 
-    tee_names = ["Nero", "Bianco", "Giallo", "Verde", "Blu", "Rosso", "Arancio"]
-    available_tees = []
-    for tee in tee_names:
-        uomo_cr = filtered.iloc[0].get(f"CR {tee} Uomini")
-        donna_cr = filtered.iloc[0].get(f"CR {tee} Donne")
-        has_uomo = uomo_cr is not None and str(uomo_cr).strip() != ""
-        has_donna = donna_cr is not None and str(donna_cr).strip() != ""
-        if has_uomo or has_donna:
-            available_tees.append(tee)
+    # Parse the results table - same as playing_hcp_page.py
+    soup_final = BeautifulSoup(final_resp.text, "html.parser")
+    table = soup_final.find("table", id="risultatiHCP")
+    if table:
+        for row in table.find_all("tr"):
+            cols = row.find_all("td")
+            if cols and len(cols) >= 3:
+                # The table has: Course, CR, Slope, Tee, Playing HCP
+                try:
+                    cr = float(cols[1].get_text(strip=True))
+                    sr = float(cols[2].get_text(strip=True))
 
-    if not available_tees:
-        st.error("No tee data found for this course.")
-        return None, None, None
+                    # Get Par from the database using course name
+                    par = 72  # default
+                    all_courses = get_allcourses()
+                    # Match course by name in the database
+                    course_match = all_courses[
+                        all_courses["Circolo"].str.contains(
+                            selected_circolo.split()[0], na=False
+                        )
+                        & all_courses["Percorso"].str.contains("Giallo-Blu", na=False)
+                    ]
+                    if not course_match.empty:
+                        try:
+                            par = float(course_match.iloc[0]["PAR"])
+                        except (ValueError, KeyError):
+                            pass
 
-    tee_color = st.selectbox("Select Tee Color", options=available_tees)
+                    return sr, cr, par
+                except (ValueError, IndexError):
+                    pass
 
-    return get_course_values(filtered.iloc[0], tee_color)
+    st.error("Could not extract course values.")
+    return None, None, None
 
 
 def get_course_values(
