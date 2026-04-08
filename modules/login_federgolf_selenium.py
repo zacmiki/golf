@@ -69,8 +69,8 @@ def login(username: str, password: str) -> bool:
     # Extract user's profile ID and name from pages after login
     try:
         pages_to_try = [
+            f"{BASE_URL}/Risultati/FilterForm",  # Check this FIRST - has the user info
             f"{BASE_URL}/AnagraficaTesserati/Index",
-            f"{BASE_URL}/Risultati/FilterForm",
             f"{BASE_URL}/Home/Index",
             f"{BASE_URL}/",
         ]
@@ -84,7 +84,7 @@ def login(username: str, password: str) -> bool:
             soup = BeautifulSoup(r.text, "html.parser")
             text = soup.get_text()
 
-            # Look for profile ID in ViewDetail links
+            # Look for profile ID in ViewDetail links (only if not set)
             if not st.session_state.get("profile_id"):
                 links = soup.find_all("a", href=True)
                 for link in links:
@@ -97,14 +97,58 @@ def login(username: str, password: str) -> bool:
                             st.session_state.profile_id = uuid_match.group(1)
                             break
 
-            # Look for player name pattern like "SURNAME, NAME (12345)"
-            if not st.session_state.get("tesserato_name"):
-                name_match = re.search(r"([A-Z]+),\s*([A-Z]+)\s*\((\d{5,})\)", text)
-                if name_match:
-                    st.session_state.tesserato_name = (
-                        f"{name_match.group(1)} {name_match.group(2)}"
+            # For FilterForm, we need to POST to get results (which shows the name in h2)
+            if "FilterForm" in page_url:
+                # Get the antiforgery token from the form
+                token_input = soup.find("input", {"name": "__RequestVerificationToken"})
+                if token_input:
+                    token = token_input.get("value")
+
+                    # Submit the form with default values to get results
+                    post_headers = generate_headers(
+                        cookies={}, referer=page_url, content_length=200
                     )
-                    st.session_state.tesserato_num = name_match.group(3)
+                    post_data = {
+                        "__RequestVerificationToken": token,
+                        "fig_gara_id": "",
+                        "fig_anagrafica_gara.fig_data_gara": "",
+                        "cgk_processo_separato": "4",  # Default: "Attribuisci HCP giocatore"
+                    }
+                    resp = session.post(
+                        f"{BASE_URL}/Risultati/FilterForm",
+                        headers=post_headers,
+                        data=post_data,
+                    )
+                    if resp.status_code == 200:
+                        soup = BeautifulSoup(resp.text, "html.parser")
+                        text = soup.get_text()
+
+            # Look for player name - check h2 elements first
+            if not st.session_state.get("tesserato_name"):
+                h2_elements = soup.find_all("h2")
+                for h2 in h2_elements:
+                    h2_text = h2.get_text(strip=True)
+                    # Pattern: "Risultati - SURNAME, NAME (TESSERA) - HI: ..."
+                    name_match = re.search(
+                        r"Risultati\s*-\s*([A-ZÀÈÉÌÒÙ]+),\s*([A-ZÀÈÉÌÒÙ]+)\s*\((\d{5,})\)",
+                        h2_text,
+                        re.IGNORECASE,
+                    )
+                    if name_match:
+                        st.session_state.tesserato_name = f"{name_match.group(1).upper()} {name_match.group(2).upper()}"
+                        st.session_state.tesserato_num = name_match.group(3)
+                        break
+
+                # Also search entire page text for the pattern
+                if not st.session_state.get("tesserato_name"):
+                    name_match = re.search(
+                        r"Risultati\s*-\s*([A-ZÀÈÉÌÒÙ]+),\s*([A-ZÀÈÉÌÒÙ]+)\s*\((\d{5,})\)",
+                        text,
+                        re.IGNORECASE,
+                    )
+                    if name_match:
+                        st.session_state.tesserato_name = f"{name_match.group(1).upper()} {name_match.group(2).upper()}"
+                        st.session_state.tesserato_num = name_match.group(3)
 
             if st.session_state.get("profile_id") and st.session_state.get(
                 "tesserato_name"
@@ -300,15 +344,22 @@ def extract_data_from_results(session: requests.Session) -> Optional[pd.DataFram
     if "Index Nuovo" in df.columns and len(df) > 0:
         st.session_state.current_handicap = float(df["Index Nuovo"].iloc[0])
 
-    # Try to extract name from Gara column
-    if "Gara" in df.columns and "Numero tessera" in df.columns:
-        gara = df["Gara"].iloc[0]
-        name_match = re.search(r"^([A-Z]+),\s*([A-Z]+)\s*-", gara)
-        if name_match:
-            st.session_state.tesserato_name = (
-                f"{name_match.group(1)} {name_match.group(2)}"
-            )
-        else:
-            st.session_state.tesserato_name = "Golfer"
+    # Use name from session state if already extracted during login, otherwise try Gara column
+    if not st.session_state.get("tesserato_name"):
+        if "Gara" in df.columns and "Numero tessera" in df.columns:
+            gara = df["Gara"].iloc[0]
+            name_match = re.search(r"^([A-Z]+),\s*([A-Z]+)\s*-", gara)
+            if name_match:
+                st.session_state.tesserato_name = (
+                    f"{name_match.group(1)} {name_match.group(2)}"
+                )
+            else:
+                st.session_state.tesserato_name = "Golfer"
+
+    # Use tessera number from session state if available
+    if st.session_state.get("tesserato_num"):
+        df["Numero tessera"] = st.session_state.tesserato_num
+    elif "Numero tessera" not in df.columns:
+        df["Numero tessera"] = "Unknown"
 
     return df
