@@ -70,6 +70,7 @@ def login(username: str, password: str) -> bool:
     try:
         pages_to_try = [
             f"{BASE_URL}/AnagraficaTesserati/Index",
+            f"{BASE_URL}/AnagraficaTesserati/ShowGrid",
             f"{BASE_URL}/Risultati/FilterForm",
             f"{BASE_URL}/Home/Index",
             f"{BASE_URL}/",
@@ -84,27 +85,53 @@ def login(username: str, password: str) -> bool:
             soup = BeautifulSoup(r.text, "html.parser")
             text = soup.get_text()
 
-            # Look for profile ID in ViewDetail links
+            # Look for profile ID in various links that contain UUIDs
             if not st.session_state.get("profile_id"):
                 links = soup.find_all("a", href=True)
                 for link in links:
                     href = link.get("href", "")
-                    if "ViewDetail" in href and "AnagraficaTesserati" in href:
-                        uuid_match = re.search(
-                            r"ViewDetail/([a-f0-9-]+)", href, re.IGNORECASE
-                        )
-                        if uuid_match:
-                            st.session_state.profile_id = uuid_match.group(1)
-                            break
+                    # Look for UUID patterns in href (works for ViewDetail, GoToEdit, ScaricaSDGiocatoreToPdf, etc.)
+                    uuid_match = re.search(
+                        r"([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})",
+                        href,
+                        re.IGNORECASE,
+                    )
+                    if uuid_match:
+                        st.session_state.profile_id = uuid_match.group(1)
+                        break
 
             # Look for player name pattern like "SURNAME, NAME (12345)"
+            # First try to find in h2 elements (common for titles)
             if not st.session_state.get("tesserato_name"):
-                name_match = re.search(r"([A-Z]+),\s*([A-Z]+)\s*\((\d{5,})\)", text)
-                if name_match:
-                    st.session_state.tesserato_name = (
-                        f"{name_match.group(1)} {name_match.group(2)}"
+                # Look specifically in h2, h1, h3 elements for better accuracy
+                for tag in ["h2", "h1", "h3"]:
+                    elements = soup.find_all(tag)
+                    for element in elements:
+                        element_text = element.get_text(strip=True)
+                        name_match = re.search(
+                            r"([A-Za-z]+),\s*([A-Za-z]+(?:\s*[A-Za-z]+)*)\s*\((\d{5,})\)",
+                            element_text,
+                        )
+                        if name_match:
+                            st.session_state.tesserato_name = (
+                                f"{name_match.group(1)} {name_match.group(2)}"
+                            ).strip()
+                            st.session_state.tesserato_num = name_match.group(3)
+                            break
+                    if st.session_state.get("tesserato_name"):
+                        break
+
+                # Fallback to searching all text if not found in headers
+                if not st.session_state.get("tesserato_name"):
+                    name_match = re.search(
+                        r"([A-Za-z]+),\s*([A-Za-z]+(?:\s*[A-Za-z]+)*)\s*\((\d{5,})\)",
+                        text,
                     )
-                    st.session_state.tesserato_num = name_match.group(3)
+                    if name_match:
+                        st.session_state.tesserato_name = (
+                            f"{name_match.group(1)} {name_match.group(2)}"
+                        ).strip()
+                        st.session_state.tesserato_num = name_match.group(3)
 
             if st.session_state.get("profile_id") and st.session_state.get(
                 "tesserato_name"
@@ -185,13 +212,36 @@ def extract_data(session: Optional[requests.Session]) -> Optional[pd.DataFrame]:
         # Already extracted during login
         pass
     else:
-        # Extract from profile page
+        # Extract from profile page - use same robust regex as during login
         text = soup.get_text()
-        tessera_match = re.search(r"([A-Z]+),\s*([A-Z]+)\s*\((\d+)\)", text)
-        if tessera_match:
-            st.session_state.tesserato_name = (
-                f"{tessera_match.group(1)} {tessera_match.group(2)}"
+        # First try to find in h2 elements (common for titles)
+        for tag in ["h2", "h1", "h3"]:
+            elements = soup.find_all(tag)
+            for element in elements:
+                element_text = element.get_text(strip=True)
+                name_match = re.search(
+                    r"([A-Za-z]+),\s*([A-Za-z]+(?:\s*[A-Za-z]+)*)\s*\((\d{5,})\)",
+                    element_text,
+                )
+                if name_match:
+                    st.session_state.tesserato_name = (
+                        f"{name_match.group(1)} {name_match.group(2)}"
+                    ).strip()
+                    st.session_state.tesserato_num = name_match.group(3)
+                    break
+            if st.session_state.get("tesserato_name"):
+                break
+
+        # Fallback to searching all text if not found in headers
+        if not st.session_state.get("tesserato_name"):
+            name_match = re.search(
+                r"([A-Za-z]+),\s*([A-Za-z]+(?:\s*[A-Za-z]+)*)\s*\((\d{5,})\)", text
             )
+            if name_match:
+                st.session_state.tesserato_name = (
+                    f"{name_match.group(1)} {name_match.group(2)}"
+                ).strip()
+                st.session_state.tesserato_num = name_match.group(3)
 
     # Use tessera number from login if available, otherwise from profile
     if st.session_state.get("tesserato_num"):

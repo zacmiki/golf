@@ -49,9 +49,24 @@ def handle_logout():
     st.sidebar.write("---")
     logout_button = st.sidebar.button("Logout")
     if logout_button:
-        st.session_state.pop("logged_in", None)
-        st.session_state.pop("df", None)
-        st.session_state.pop("federgolf_session", None)
+        # Clear all user-specific session state
+        keys_to_clear = [
+            "logged_in",
+            "df",
+            "federgolf_session",
+            "username",
+            "password",
+            "tesserato_name",
+            "tesserato_num",
+            "profile_id",
+            "current_handicap",
+            "slider_value",
+            "selected_option",
+        ]
+        for key in keys_to_clear:
+            if key in st.session_state:
+                del st.session_state[key]
+        # Reset to defaults
         st.session_state.selected_option = "None"
         st.rerun()
 
