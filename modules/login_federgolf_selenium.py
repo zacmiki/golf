@@ -54,9 +54,51 @@ def login(username: str, password: str) -> bool:
 
     r2 = session.post(post_url, data=payload, headers=headers)
 
-    if r2.status_code != 200 or len(r2.content) < 10000:
-        st.error("Login failed. Check your credentials.")
+    if r2.status_code != 200:
+        st.error(f"Login failed. HTTP status code: {r2.status_code}")
         return False
+    
+    # Handle content encoding (gzip, brotli, etc.)
+    content_encoding = r2.headers.get('Content-Encoding', '').lower()
+    content = r2.content
+    
+    try:
+        import brotli
+        if content_encoding == 'br':
+            content = brotli.decompress(content)
+        elif content_encoding == 'gzip':
+            import gzip
+            content = gzip.decompress(content)
+        elif content_encoding == 'deflate':
+            import zlib
+            content = zlib.decompress(content)
+    except ImportError:
+        # If brotli is not available, try to install it or skip decompression
+        pass
+    except Exception:
+        # If decompression fails, use original content
+        pass
+    
+    # Check if we got a valid response after decompression
+    if len(content) < 10000:
+        st.error(f"Login failed. Response too short: {len(content)} bytes after decompression. This might indicate an error page or bot detection.")
+        # Show first 500 characters of response for debugging
+        try:
+            debug_info = content[:500].decode('utf-8', errors='ignore') if content else "No content"
+        except:
+            debug_info = "Could not decode response"
+        st.error(f"Response preview: {debug_info}")
+        return False
+        
+    # Update the session's content for further processing
+    # We'll create a new response object with decompressed content for consistency
+    from requests.models import Response
+    decompressed_response = Response()
+    decompressed_response._content = content
+    decompressed_response.status_code = r2.status_code
+    decompressed_response.headers = r2.headers
+    decompressed_response.encoding = r2.encoding
+    r2 = decompressed_response
 
     session_cookies = {c.name: c.value for c in session.cookies}
     for key in FEDERGOLF_SESSION_COOKIES:
