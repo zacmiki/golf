@@ -1,0 +1,33 @@
+[project]
+name = "federgolf-companion"
+version = "0.1.0"
+description = "A Streamlit companion for FederGolf results and handicap analysis"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "beautifulsoup4>=4.12,<5",
+    "numpy>=1.26,<3",
+    "pandas>=2.2,<3",
+    "plotly>=5.22,<7",
+    "requests>=2.31,<3",
+    "streamlit>=1.40,<2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.2,<9",
+    "ruff>=0.12,<1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = ["live: calls FederGolf public endpoints (no authentication)"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]

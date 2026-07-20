@@ -1,114 +1,65 @@
-import streamlit as st
+from __future__ import annotations
+
 import pandas as pd
+import streamlit as st
+
+from .ui import player_overview
+
+WINDOW_SIZE = 20
+COUNTING_SCORES = 8
+EXCLUDED_FORMULAS = {"L4M", "L2M"}
 
 
-@st.cache_data
+def handicap_window(df: pd.DataFrame) -> pd.DataFrame:
+    rounds = df.copy()
+    if "Formula" in rounds:
+        rounds = rounds[~rounds["Formula"].isin(EXCLUDED_FORMULAS)]
+    rounds["SD"] = pd.to_numeric(rounds["SD"], errors="coerce")
+    rounds = rounds.dropna(subset=["SD"]).head(WINDOW_SIZE).copy()
+    rounds["Counting"] = False
+    if not rounds.empty:
+        indices = rounds.nsmallest(min(COUNTING_SCORES, len(rounds)), "SD").index
+        rounds.loc[indices, "Counting"] = True
+    return rounds.reset_index(drop=True)
+
+
+def handicap_manager() -> None:
+    load_coursetable(st.session_state.df)
+
+
 def load_coursetable(df: pd.DataFrame) -> None:
-    # -------------------------
-    # PREPROCESSING
-    # -------------------------
-
-    # 1. FILTER BY VALIDITY (Valida = 'S') if column exists
-    if "Valida" in df.columns:
-        df = df[df["Valida"] == "S"].copy()
-
-    # 2. REMOVE INVALID FORMULAS FIRST
-    # We do this before head(20) so we don't "waste" slots on L4M/L2M
-    exclude_list = ["L4M", "L2M"]
-    df = df[~df["Formula"].isin(exclude_list)].copy()
-
-    # 3. Keep only the first 20 valid (non-NaN) SD values
-    filtered_df = df.dropna(subset=["SD"]).head(20).copy()
-
-    # Make sure SD is numeric (handle both '.' and ',' decimal separators)
-    filtered_df["SD"] = filtered_df["SD"].astype(str).str.replace(",", ".", regex=False)
-    filtered_df["SD"] = pd.to_numeric(filtered_df["SD"], errors="coerce")
-
-    # Select relevant columns
-
-    # relevant_columns = ["Data", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
-    relevant_columns = ["Data", "Gara", "Stbl", "Formula", "SD", "Index Nuovo"]
-
-    strippeddf = filtered_df[relevant_columns].copy().reset_index(drop=True)
-
-    # -------------------------
-    # COMPUTE BEST 8 ROUNDS
-    # -------------------------
-    best_8 = strippeddf.nsmallest(8, "SD")
-    best_8_indices = best_8.index
-    max_index = best_8_indices.max()
-    highest_indexed_element = best_8.loc[max_index]
-
-    # -------------------------
-    # RENAME COLUMNS
-    # -------------------------
-    strippeddf = strippeddf.rename(columns={"Index Nuovo": "New EGA", "Data": "Date"})
-
-    # -------------------------
-    # PAGE LAYOUT
-    # -------------------------
+    rounds = handicap_window(df)
     st.title("Handicap Manager ⛳️")
-    st.divider()
+    player_overview(df)
+    if rounds.empty:
+        st.warning("No valid handicap rounds are available.")
+        return
 
-    current_handicap = st.session_state.get(
-        "current_handicap", df["Index Nuovo"].iloc[0]
-    )
-    best_handicap = df["Index Nuovo"].min()
-
-    tesserato_name = st.session_state.get("tesserato_name", "")
-    tesserato_num = df["Numero tessera"].iloc[0]
-    if tesserato_name:
-        tesserato_display = f"{tesserato_name} ({tesserato_num})"
-    else:
-        tesserato_display = f"Tessera {tesserato_num}"
-
-    st.success(
-        f"""
-        #### 🏌️ {tesserato_display}
-        #### ⛳️ Current HCP: {current_handicap:.1f}  
-        #### ⛳️ Best HCP: {best_handicap:.1f}
-        """
-    )
-
-    # -------------------------
-    # NEXT EXPIRING ROUND
-    # -------------------------
-    st.info("Your Next EXPIRING Round is")
-    st.markdown(f"##### {strippeddf.iloc[-1]['Gara']}")
-    st.markdown(
-        f"##### Date: {strippeddf.iloc[-1]['Date']} - "
-        f"Stableford = {strippeddf.iloc[-1]['Stbl']} - "
-        f"SD = {strippeddf.iloc[-1]['SD']:.1f}"
-    )
-    st.divider()
-
+    expiring = rounds.iloc[-1]
     st.info(
-        f"""You can play **{19 - max_index}** more rounds before you lose your next valid round, which is  
-    	{highest_indexed_element["Gara"]} — Stbl = {highest_indexed_element["Stbl"]} — SD = {highest_indexed_element["SD"]:.1f}"""
+        f"Next expiring round: **{expiring['Gara']}** · {expiring['Data']} · "
+        f"Stableford {expiring['Stbl']:.0f} · SD {expiring['SD']:.1f}"
     )
-    st.divider()
 
-    # -------------------------
-    # TABLE DISPLAY
-    # -------------------------
-    st.subheader("Last 20 VALID Rounds")
-    st.markdown("##### Rounds valid for HCP (lowest SD) are highlighted")
+    counting = rounds[rounds["Counting"]]
+    next_counting = counting.loc[counting.index.max()]
+    rounds_remaining = len(rounds) - 1 - int(counting.index.max())
+    st.info(
+        f"**{rounds_remaining}** round(s) until the next counting score expires: "
+        f"{next_counting['Gara']} · SD {next_counting['SD']:.1f}"
+    )
 
-    smallest_8_indices = strippeddf.nsmallest(8, "SD").index
-
-    # Highlight lowest SD rounds
-    def highlight_smallest(s):
-        return [
-            "background-color: rgba(0, 128, 0, 0.8)" if i in smallest_8_indices else ""
-            for i in s.index
-        ]
-
-    format_dict = {
-        "Stbl": "{:,.0f}",
-        "AGS": "{:,.0f}",
-        "SD": "{:,.1f}",
-        "New EGA": "{:,.1f}",
-    }
-
-    styled_df = strippeddf.style.apply(highlight_smallest, axis=0).format(format_dict)
-    st.write(styled_df)
+    display = rounds.rename(columns={"Index Nuovo": "New HCP", "Data": "Date"})
+    columns = ["Date", "Gara", "Stbl", "Formula", "SD", "New HCP", "Counting"]
+    st.subheader("Current 20-round handicap window")
+    st.dataframe(
+        display[[column for column in columns if column in display]],
+        hide_index=True,
+        width="stretch",
+        column_config={
+            "Stbl": st.column_config.NumberColumn(format="%.0f"),
+            "SD": st.column_config.NumberColumn(format="%.1f"),
+            "New HCP": st.column_config.NumberColumn(format="%.1f"),
+            "Counting": st.column_config.CheckboxColumn(),
+        },
+    )

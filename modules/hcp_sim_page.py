@@ -1,287 +1,121 @@
 from __future__ import annotations
 
-from typing import Optional
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
-import requests
 import streamlit as st
-from bs4 import BeautifulSoup
 
-from .course_hcp import get_allcourses, VALID_ROUNDS
-from .federgolf_client import (
-    BASE_URL,
-    COURSE_HCP_URL,
-    TEE_COLORS,
-    build_cookies,
-    calc_request_payload,
-    generate_headers,
-    store_session_cookies,
+from .course_hcp import (
+    VALID_ROUNDS,
+    course_par,
+    course_rating,
+    select_course,
 )
-from .graphs import plot_last_n
+from .federgolf_client import FederGolfError
+from .rounds_page import PLOT_CONFIG, handicap_chart
+from .ui import current_handicap, player_overview
 
 BEST_8_COUNT = 8
-SCENARIO_PRESETS = [33, 36, 38]
+SCENARIO_PRESETS = (33, 36, 38)
+
+
+@dataclass(frozen=True)
+class Simulation:
+    score_differential: float
+    handicap: float
+
+
+def simulate_handicap(
+    df: pd.DataFrame,
+    current_index: float,
+    slope: float,
+    course_rating: float,
+    par: float,
+    stableford_points: float,
+) -> Simulation:
+    """Project one new round from a Stableford score and course ratings."""
+    recent = df.copy()
+    recent["_date"] = pd.to_datetime(recent["Data"], errors="coerce")
+    recent = recent.sort_values("_date", ascending=False, kind="stable")
+    differentials = (
+        pd.to_numeric(recent["SD"], errors="coerce")
+        .dropna()
+        .head(VALID_ROUNDS - 1)
+        .to_numpy(dtype=float)
+    )
+    if differentials.size == 0:
+        raise ValueError("At least one valid Score Differential is required")
+
+    adjusted_score = int(par + current_index - (stableford_points - 36))
+    new_sd = round((113 / slope) * (adjusted_score - course_rating), 1)
+    best = np.sort(np.append(differentials, new_sd))[:BEST_8_COUNT]
+    return Simulation(new_sd, round(float(best.mean()), 1))
 
 
 def hcp_sim() -> None:
-    st.title("🧮 New HCP Calculator")
-    st.subheader("Currently working for 18 Hole Courses")
-    st.divider()
+    df = st.session_state.df
+    current = current_handicap(df)
+    st.title("🧮 Handicap Simulator")
+    st.caption("Project how one new 18-hole Stableford result may affect your Index.")
+    player_overview(df)
 
-    tesserato_name = st.session_state.get("tesserato_name", "")
-    tesserato_num = st.session_state.df["Numero tessera"].iloc[0]
-    if tesserato_name:
-        tesserato_display = f"{tesserato_name} ({tesserato_num})"
-    else:
-        tesserato_display = f"Tessera {tesserato_num}"
-
-    current_handicap = st.session_state.get(
-        "current_handicap", st.session_state.df["Index Nuovo"][0]
-    )
-    st.success(
-        f"\n\n##### 🏌️ {tesserato_display}"
-        + f"\n\n##### ⛳️ Current HCP: {current_handicap:.1f}  ⛳️",
-    )
-
-    sr, cr, par = select_course()
-
-    if sr is None:
-        st.divider()
-        st.markdown(
-            """
-    <a href="https://buymeacoffee.com/miczac?l=it" target="_blank">
-        <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=YourUsername&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff">
-    </a>
-    """,
-            unsafe_allow_html=True,
-        )
+    selection = select_course("simulation")
+    if selection is None:
+        return
+    par = course_par(selection)
+    if par is None:
+        st.error("FederGolf did not publish a Par value for this course.")
+        return
+    try:
+        details = course_rating(selection)
+    except FederGolfError as exc:
+        st.error(str(exc))
         return
 
-    punti = st.number_input(
-        "⛳️ INPUT YOUR STABLEFORD SCORE", min_value=1, max_value=54, value=36, step=1
+    points = st.number_input(
+        "Stableford score", min_value=1, max_value=54, value=36, step=1
     )
-
-    assert cr is not None and par is not None
-    new_sd, simulated_hcp = new_hcp(sr, cr, par, punti)
-
-    st.info(
-        f"\n\n##### New Handicap: {simulated_hcp:.2f}"
-        + f"\n\n##### Last Round SD: {new_sd:.2f}",
-    )
-
-    st.divider()
-    st.markdown("#### 📊 What If?")
-
-    results: list[tuple[str, float, float]] = []
-    for pts in SCENARIO_PRESETS:
-        sd_res, hcp_res = new_hcp(sr, cr, par, pts)
-        results.append((f"{pts} pts", sd_res, hcp_res))
-
-    card_cols = st.columns(3)
-    for i, (label, sd_res, hcp_res) in enumerate(results):
-        delta = hcp_res - current_handicap
-        delta_color = "#4CAF50" if delta < 0 else "#e63946" if delta > 0 else "#aaa"
-        delta_sign = "+" if delta > 0 else ""
-
-        with card_cols[i]:
-            st.markdown(
-                f"""
-                <div style="background:#2d2d2d; border:1px solid #555; border-radius:12px; padding:16px; text-align:center; margin-bottom:8px;">
-                <div style="font-size:16px; font-weight:bold; color:#fff;">⛳️ {label}</div>
-                <hr style="margin:8px 0; border-color:#555;">
-                <div style="font-size:12px; color:#ccc;">New SD</div>
-                <div style="font-size:15px; font-weight:bold; color:#fff;">{sd_res:.1f}</div>
-                <div style="font-size:12px; color:#ccc; margin-top:8px;">New HCP</div>
-                <div style="font-size:20px; font-weight:bold; color:#fff;">{hcp_res:.1f}</div>
-                <div style="font-size:13px; margin-top:6px; color:{delta_color}; font-weight:bold;">{delta_sign}{delta:+.1f}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-    st.divider()
-    st.success("#### EGA Plot - 20 results plus new projected value")
-    plot_last_n(VALID_ROUNDS, new_handicap=simulated_hcp)
-
-    st.divider()
-    st.markdown(
-        """
-    <a href="https://buymeacoffee.com/miczac?l=it" target="_blank">
-        <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=YourUsername&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff">
-    </a>
-    """,
-        unsafe_allow_html=True,
-    )
-
-
-def select_course() -> tuple[Optional[float], Optional[float], Optional[float]]:
-    st.markdown("#### 🏌️ Select Course")
-
-    response = requests.get(COURSE_HCP_URL)
-    if response.status_code != 200:
-        st.error("Failed to load course handicap page.")
-        return None, None, None
-
-    soup = BeautifulSoup(response.text, "html.parser")
-    token = None
-    for script in soup.find_all("script"):
-        content = script.string
-        if content and "antiforgeryToken" in content:
-            parts = content.split('value="')
-            if len(parts) > 1:
-                token = parts[1].split('"')[0]
-            break
-
-    if token:
-        st.session_state.antiforgery_token = token
-    store_session_cookies(response)
-
-    circolo_options = {
-        opt.text.strip(): opt["value"] for opt in soup.select("#ddlCircolo option")
-    }
-    selected_circolo = st.selectbox(
-        "Select Circolo", options=list(circolo_options.keys())
-    )
-
-    url = f"{BASE_URL}/CourseHandicapCalc/Calc"
-    headers = generate_headers(
-        cookies=build_cookies(),
-        referer=COURSE_HCP_URL,
-        content_length=260,
-    )
-
-    circolo_value = circolo_options.get(selected_circolo)
-    if not circolo_value:
-        return None, None, None
-
-    payload = {
-        "selectedCircolo": circolo_value,
-        "SelectedPercorso": "",
-        "tee": "",
-        "hcp": "",
-        "__RequestVerificationToken": st.session_state.antiforgery_token,
-    }
-    resp = requests.post(url, headers=headers, data=payload)
-
-    if resp.status_code != 200:
-        st.error("Failed to fetch course data.")
-        return None, None, None
-
-    soup2 = BeautifulSoup(resp.text, "html.parser")
-    course_options = {
-        opt.text.strip(): opt["value"] for opt in soup2.select("#ddlPercorso option")
-    }
-
-    selected_course = st.selectbox("Select Course", options=list(course_options.keys()))
-
-    selected_course_value = course_options.get(selected_course)
-    if not selected_course_value:
-        return None, None, None
-
-    # Use all tee colors (same as playing_hcp_page.py)
-    tee_color = st.selectbox("Select Tee Color", options=TEE_COLORS)
-
-    # Get CR/SR/Par by making a POST with the tee (same as playing_hcp_page.py)
-    final_payload = calc_request_payload(
-        circolo_value, selected_course_value, tee_color, "18"
-    )
-    final_resp = requests.post(url, headers=headers, data=final_payload)
-
-    if final_resp.status_code != 200:
-        st.error("Failed to fetch course details.")
-        return None, None, None
-
-    # Parse the results table - same as playing_hcp_page.py
-    soup_final = BeautifulSoup(final_resp.text, "html.parser")
-    table = soup_final.find("table", id="risultatiHCP")
-    if table:
-        for row in table.find_all("tr"):
-            cols = row.find_all("td")
-            if cols and len(cols) >= 3:
-                # The table has: Course, CR, Slope, Tee, Playing HCP
-                try:
-                    cr = float(cols[1].get_text(strip=True))
-                    sr = float(cols[2].get_text(strip=True))
-
-                    # Get Par from the database using course name
-                    par = 72  # default
-                    all_courses = get_allcourses()
-                    # Match course by name in the database
-                    course_match = all_courses[
-                        all_courses["Circolo"].str.contains(
-                            selected_circolo.split()[0], na=False
-                        )
-                        & all_courses["Percorso"].str.contains("Giallo-Blu", na=False)
-                    ]
-                    if not course_match.empty:
-                        try:
-                            par = float(course_match.iloc[0]["PAR"])
-                        except (ValueError, KeyError):
-                            pass
-
-                    return sr, cr, par
-                except (ValueError, IndexError):
-                    pass
-
-    st.error("Could not extract course values.")
-    return None, None, None
-
-
-def get_course_values(
-    row: pd.Series, tee: str
-) -> tuple[Optional[float], Optional[float], Optional[float]]:
-    cr_col = f"CR {tee} Uomini"
-    sr_col = f"Slope {tee} Uomini"
-
-    if cr_col not in row.index:
-        cr_col = f"CR {tee} Donne"
-        sr_col = f"Slope {tee} Donne"
-
-    if cr_col not in row.index:
-        return None, None, None
-
     try:
-        cr = float(row[cr_col])
-        sr = float(row[sr_col])
-        par = float(row["PAR"])
-    except (ValueError, TypeError):
-        return None, None, None
+        projection = simulate_handicap(
+            df,
+            current,
+            details.slope_rating,
+            details.course_rating,
+            par,
+            points,
+        )
+    except ValueError as exc:
+        st.error(str(exc))
+        return
 
-    return sr, cr, par
+    projected, differential = st.columns(2)
+    projected.metric(
+        "Projected Handicap",
+        f"{projection.handicap:.1f}",
+        delta=f"{projection.handicap - current:+.1f}",
+        delta_color="inverse",
+    )
+    differential.metric("Projected Score Differential", f"{projection.score_differential:.1f}")
 
+    st.subheader("What if?")
+    columns = st.columns(len(SCENARIO_PRESETS))
+    for column, scenario_points in zip(columns, SCENARIO_PRESETS, strict=True):
+        scenario = simulate_handicap(
+            df,
+            current,
+            details.slope_rating,
+            details.course_rating,
+            par,
+            scenario_points,
+        )
+        column.metric(
+            f"{scenario_points} points",
+            f"HCP {scenario.handicap:.1f}",
+            delta=f"{scenario.handicap - current:+.1f}",
+            delta_color="inverse",
+        )
+        column.caption(f"Score Differential {scenario.score_differential:.1f}")
 
-def new_hcp(
-    sr_percorso: float, cr_percorso: float, par_percorso: float, punti: float
-) -> tuple[float, float]:
-    df = st.session_state.df.copy()
-    df["SD"] = pd.to_numeric(df["SD"], errors="coerce")
-
-    if "Data" in df.columns:
-        df = df.sort_values("Data", ascending=False)
-
-    if "Valida" in df.columns:
-        df = df[df["Valida"] == "S"]
-
-    valid_sd = df["SD"].dropna().head(VALID_ROUNDS - 1).values.astype(float)
-
-    if len(valid_sd) == 0:
-        st.error("Not enough valid SDs for calculation.")
-        return 0.0, 0.0
-
-    # Use current_handicap from profile page (most accurate)
-    current_hcp = st.session_state.get("current_handicap")
-    if current_hcp is not None:
-        playing_hcp = current_hcp
-    else:
-        playing_hcp = float(st.session_state.df["Index Nuovo"][0])
-
-    adjusted_score = int(par_percorso + playing_hcp - (punti - 36))
-    new_sd = (113 / sr_percorso) * (adjusted_score - cr_percorso)
-    new_sd = round(new_sd, 1)
-
-    all_sd = np.append(valid_sd, new_sd)
-    best_8 = np.sort(all_sd)[:BEST_8_COUNT]
-
-    hcp_simulato = round(float(np.mean(best_8)), 1)
-    return new_sd, hcp_simulato
+    figure = handicap_chart(df, VALID_ROUNDS, projection.handicap)
+    st.plotly_chart(figure, width="stretch", config=PLOT_CONFIG)
