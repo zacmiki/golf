@@ -91,12 +91,12 @@ def hcp_sim() -> None:
 
     projected, differential = st.columns(2)
     projected.metric(
-        "Projected Handicap",
+        "Calculated New Handicap",
         f"{projection.handicap:.1f}",
         delta=f"{projection.handicap - current:+.1f}",
         delta_color="inverse",
     )
-    differential.metric("Projected Score Differential", f"{projection.score_differential:.1f}")
+    differential.metric("Score Differential", f"{projection.score_differential:.1f}")
 
     st.subheader("What if?")
     columns = st.columns(len(SCENARIO_PRESETS))
