@@ -1,160 +1,98 @@
+from __future__ import annotations
+
+from importlib import import_module
+
 import streamlit as st
 
-from modules.graphs import fig_companion
-from modules.hcp_manager_page import load_coursetable
-from modules.hcp_sim_page import hcp_sim
-from modules.login_federgolf_selenium import extract_data, login
-from modules.playing_hcp_page import playing_hcp
+from modules.ui import sidebar_footer
 
 st.set_page_config(layout="wide")
 
 
-# -------------------------
-# Sidebar navigation
-# -------------------------
-def display_sidebar_menu():
-    options = [
-        "Official Rounds",
-        "Handicap Manager",
-        "Handicap Simulation",
-        "Playing Handicap",
-    ]
-
-    st.sidebar.write("### Navigation")
-
-    for option in options:
-        if st.sidebar.button(option, use_container_width=True):
-            st.session_state.selected_option = option
-
-    if st.session_state.selected_option not in options:
-        st.session_state.selected_option = options[0]
+PAGES = {
+    "Official Rounds": ("modules.rounds_page", "official_rounds"),
+    "Performance Insights": ("modules.insights_page", "performance_insights"),
+    "Handicap Manager": ("modules.hcp_manager_page", "handicap_manager"),
+    "Handicap Simulation": ("modules.hcp_sim_page", "hcp_sim"),
+    "Course Handicap": ("modules.playing_hcp_page", "playing_hcp"),
+}
 
 
-# -------------------------
-# Login form
-# -------------------------
-def display_login_form():
-    st.title("Login to Load Your F.I.G. Results")
-    st.write("Please enter your username and password to download Your Results")
-    username = st.text_input("Username", st.session_state.get("username", ""))
-    password = st.text_input("Password", type="password")
-    submit_button = st.button("Login")
-    return username, password, submit_button
+def render_page(name: str) -> None:
+    module_name, function_name = PAGES.get(name, PAGES["Official Rounds"])
+    getattr(import_module(module_name), function_name)()
 
 
-# -------------------------
-# Logout handling
-# -------------------------
-def handle_logout():
-    st.sidebar.write("---")
-    logout_button = st.sidebar.button("Logout")
-    if logout_button:
-        # Clear all user-specific session state
-        keys_to_clear = [
-            "logged_in",
-            "df",
-            "federgolf_session",
-            "username",
-            "password",
-            "tesserato_name",
-            "tesserato_num",
-            "profile_id",
-            "current_handicap",
-            "slider_value",
-            "selected_option",
-        ]
-        for key in keys_to_clear:
-            if key in st.session_state:
-                del st.session_state[key]
-        # Reset to defaults
-        st.session_state.selected_option = "None"
-        st.rerun()
+def initialize_state() -> None:
+    defaults = {
+        "selected_option": "Official Rounds",
+        "logged_in": False,
+        "federgolf_client": None,
+        "df": None,
+    }
+    for key, value in defaults.items():
+        st.session_state.setdefault(key, value)
 
 
-# ---------------------   MAIN PAGE LOGIC --------------------
-def main():
-    # Initialize session states
-    if "selected_option" not in st.session_state:
-        st.session_state.selected_option = "None"
-    if "logged_in" not in st.session_state:
-        st.session_state.logged_in = False
-    if "federgolf_session" not in st.session_state:
-        st.session_state.federgolf_session = None
-
-    # Sidebar menu
+def sidebar() -> None:
     st.sidebar.title("Your FederGolf Companion")
     st.sidebar.caption("By Mic&Jac Zac")
-    st.sidebar.write("Please select an option from the sidebar.")
+    st.sidebar.subheader("Navigation")
+    for page in PAGES:
+        if st.sidebar.button(page, width="stretch"):
+            st.session_state.selected_option = page
 
-    display_sidebar_menu()
 
-    # -------------------------
-    # Handle login
-    # -------------------------
+def login_page() -> None:
+    st.title("Login to FederGolf")
+    st.write("Enter your FederGolf credentials to load your official results.")
+    with st.form("login"):
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Login")
+    if not submitted:
+        return
+    if not username or not password:
+        st.error("Please enter both username and password.")
+        return
+    from modules.login_federgolf import login
+
+    with st.spinner("Logging in..."):
+        if login(username, password):
+            st.session_state.logged_in = True
+            st.session_state.selected_option = "Handicap Manager"
+            st.rerun()
+
+
+def load_results() -> bool:
+    if st.session_state.df is not None:
+        return True
+    from modules.login_federgolf import extract_data
+
+    with st.spinner("Fetching results..."):
+        st.session_state.df = extract_data(st.session_state.federgolf_client)
+    if st.session_state.df is None or st.session_state.df.empty:
+        st.error("No usable FederGolf results were returned. Please log in again.")
+        return False
+    return True
+
+
+def logout() -> None:
+    st.session_state.clear()
+
+
+def main() -> None:
+    initialize_state()
+    sidebar()
+
     if not st.session_state.logged_in:
-        username, password, submit_button = display_login_form()
+        login_page()
+    elif load_results():
+        render_page(st.session_state.selected_option)
+        st.sidebar.button("Logout", on_click=logout, width="stretch")
 
-        if submit_button:
-            if username and password:
-                st.session_state.username = username
-                st.session_state.password = password
-                with st.spinner("Logging in..."):
-                    logged_in = login(username, password)
-                    if logged_in:
-                        st.session_state.logged_in = True
-                        st.session_state.selected_option = "Handicap Manager"
-                        st.rerun()
-                    else:
-                        st.error("Login failed. Please check your credentials.")
-            else:
-                st.error("Please enter both username and password.")
-    else:
-        # -------------------------
-        # Load data if not already cached
-        # -------------------------
-        if st.session_state.selected_option in [
-            "Official Rounds",
-            "Handicap Manager",
-            "Handicap Simulation",
-            "Playing Handicap",
-        ]:
-            if "df" not in st.session_state or st.session_state.df is None:
-                with st.spinner("Fetching data..."):
-                    session = st.session_state.get("federgolf_session")
-                    st.session_state.df = extract_data(session)
-
-        # -------------------------
-        # Render pages
-        # -------------------------
-        if st.session_state.selected_option == "Official Rounds":
-            fig_companion()
-        elif st.session_state.selected_option == "Handicap Manager":
-            load_coursetable(st.session_state.df)
-        elif st.session_state.selected_option == "Handicap Simulation":
-            hcp_sim()
-        elif st.session_state.selected_option == "Playing Handicap":
-            playing_hcp()
-        else:
-            st.write("Please select an option from the sidebar.")
-
-        handle_logout()
-
-    # -------------------------
-    # Footer / coffee link
-    # -------------------------
-    st.sidebar.divider()
-    st.sidebar.markdown(
-        """
-    <a href="https://buymeacoffee.com/miczac?l=it" target="_blank">
-        <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=YourUsername&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff">
-    </a>
-    """,
-        unsafe_allow_html=True,
-    )
+    sidebar_footer()
 
 
-# -------------------------
-# Run app
-# -------------------------
 if __name__ == "__main__":
     main()

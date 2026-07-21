@@ -1,0 +1,1 @@
+"""FederGolf Companion application modules."""
