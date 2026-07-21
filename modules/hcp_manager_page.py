@@ -3,7 +3,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from .ui import player_overview
+from .ui import current_handicap, player_label
 
 WINDOW_SIZE = 20
 COUNTING_SCORES = 8
@@ -30,7 +30,11 @@ def handicap_manager() -> None:
 def load_coursetable(df: pd.DataFrame) -> None:
     rounds = handicap_window(df)
     st.title("Handicap Manager ⛳️")
-    player_overview(df)
+    st.success(
+        f"🏌️ **{player_label(df)}**  \n"
+        f"Current HCP **{current_handicap(df):.1f}** · "
+        f"Best HCP **{df['Index Nuovo'].min():.1f}**"
+    )
     if rounds.empty:
         st.warning("No valid handicap rounds are available.")
         return
@@ -51,9 +55,16 @@ def load_coursetable(df: pd.DataFrame) -> None:
 
     display = rounds.rename(columns={"Index Nuovo": "New HCP", "Data": "Date"})
     columns = ["Date", "Gara", "Stbl", "Formula", "SD", "New HCP", "Counting"]
-    st.subheader("Current 20-round handicap window")
+    st.subheader("Your last 20 valid rounds")
+    st.caption("🟩 Green rounds are the 8 scores currently counting for your Handicap.")
+    visible = display[[column for column in columns if column in display]]
+
+    def highlight_counting(row: pd.Series) -> list[str]:
+        color = "background-color: rgba(0, 128, 0, 0.55)" if row["Counting"] else ""
+        return [color] * len(row)
+
     st.dataframe(
-        display[[column for column in columns if column in display]],
+        visible.style.apply(highlight_counting, axis=1),
         hide_index=True,
         width="stretch",
         column_config={

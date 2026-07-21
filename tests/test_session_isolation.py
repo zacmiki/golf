@@ -25,7 +25,8 @@ def test_member_data_is_isolated_between_sessions() -> None:
     alice = app_session("Alice", 111, 12.3)
     bob = app_session("Bob", 222, 24.6)
 
-    assert alice.metric[0].value == "Alice (111)"
-    assert bob.metric[0].value == "Bob (222)"
-    assert alice.metric[1].value == "12.3"
-    assert bob.metric[1].value == "24.6"
+    assert not alice.exception and not bob.exception
+    assert "Alice (111)" in alice.success[0].value
+    assert "Bob (222)" in bob.success[0].value
+    assert "12.3" in alice.success[0].value
+    assert "24.6" in bob.success[0].value
