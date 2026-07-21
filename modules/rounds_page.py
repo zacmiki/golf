@@ -5,6 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from .hcp_manager_page import handicap_window
 from .ui import player_overview
 
 PLOT_CONFIG = {
@@ -31,7 +32,7 @@ def official_rounds() -> None:
         "Number of results",
         min_value=1,
         max_value=maximum,
-        value=min(20, maximum),
+        value=min(30, maximum),
     )
     st.plotly_chart(handicap_chart(df, count), width="stretch", config=PLOT_CONFIG)
 
@@ -41,10 +42,22 @@ def official_rounds() -> None:
         st.plotly_chart(distribution, width="stretch", config=PLOT_CONFIG)
 
     columns = ["Data", "Gara", "Stbl", "AGS", "SD", "Index Nuovo"]
-    table = df[[column for column in columns if column in df]].head(count)
+    counting_positions = counting_round_positions(df)
+    positioned = df.reset_index(drop=True)
+    table = positioned[[column for column in columns if column in df]].head(count)
     st.subheader(f"Last {count} rounds")
+    st.caption("🟩 Green rounds are the 8 scores currently counting for your Handicap.")
+
+    def highlight_counting(row: pd.Series) -> list[str]:
+        color = (
+            "background-color: rgba(0, 128, 0, 0.55)"
+            if row.name in counting_positions
+            else ""
+        )
+        return [color] * len(row)
+
     st.dataframe(
-        table,
+        table.style.apply(highlight_counting, axis=1),
         hide_index=True,
         width="stretch",
         column_config={
@@ -53,6 +66,12 @@ def official_rounds() -> None:
             if column in table
         },
     )
+
+
+def counting_round_positions(df: pd.DataFrame) -> set[int]:
+    positioned = df.reset_index(drop=True).assign(_position=lambda frame: frame.index)
+    window = handicap_window(positioned)
+    return set(window.loc[window["Counting"], "_position"])
 
 
 def recent_rounds(df: pd.DataFrame, count: int) -> pd.DataFrame:

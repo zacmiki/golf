@@ -19,7 +19,7 @@ from modules.insights_page import (
     potential_exceptional_rounds,
     summarize_performance,
 )
-from modules.rounds_page import strokes_distribution
+from modules.rounds_page import counting_round_positions, strokes_distribution
 
 
 def _results_html(rows: str) -> str:
@@ -121,11 +121,13 @@ def test_handicap_window_and_simulation_are_pure_calculations() -> None:
     )
 
     window = handicap_window(dataframe)
+    counting_positions = counting_round_positions(dataframe)
     projection = simulate_handicap(dataframe.iloc[1:], 12.0, 113, 72, 72, 36)
     distribution = strokes_distribution(dataframe, 20, show_curve=True)
 
     assert len(window) == 20
     assert window["Counting"].sum() == 8
+    assert counting_positions == set(range(1, 9))
     assert 5.0 not in window["SD"].tolist()
     assert projection.score_differential == 12.0
     assert projection.handicap == 12.9
