@@ -173,5 +173,6 @@ def strokes_distribution(
         yaxis_title="Frequency",
         height=390,
         margin={"l": 20, "r": 20, "t": 60, "b": 30},
+        showlegend=False,
     )
     return figure
