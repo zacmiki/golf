@@ -9,16 +9,8 @@ from .hcp_manager_page import handicap_window
 from .ui import player_overview
 
 PLOT_CONFIG = {
-    "modeBarButtonsToRemove": [
-        "zoom",
-        "zoomIn",
-        "zoomOut",
-        "pan",
-        "autoScale",
-        "resetScale",
-        "select2d",
-        "lasso2d",
-    ]
+    "displayModeBar": False,
+    "responsive": True,
 }
 
 
@@ -127,6 +119,9 @@ def handicap_chart(
         margin={"l": 20, "r": 20, "t": 60, "b": 30},
         showlegend = False,
     )
+    figure.update_xaxes(fixedrange=True)
+    figure.update_yaxes(fixedrange=True)
+    
     return figure
 
 
