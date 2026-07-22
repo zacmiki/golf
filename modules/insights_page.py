@@ -203,7 +203,7 @@ def _show_differential_chart(rounds: pd.DataFrame) -> None:
     figure.update_layout(
         title="SD: Last 20",
         xaxis_title="Date",
-        yaxis_title="Score Differential (lower is better)",
+        yaxis_title="Score Differential",
         hovermode="x unified",
         height=430,
         margin={"l": 20, "r": 20, "t": 60, "b": 30},
