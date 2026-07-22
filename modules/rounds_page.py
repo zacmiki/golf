@@ -125,6 +125,7 @@ def handicap_chart(
         hovermode="x unified",
         height=430,
         margin={"l": 20, "r": 20, "t": 60, "b": 30},
+        showlegend = False,
     )
     return figure
 
