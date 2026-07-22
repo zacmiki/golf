@@ -162,17 +162,102 @@ def strokes_distribution(
             go.Scatter(
                 x=smooth,
                 y=density,
+                mode="lines",def strokes_distribution(
+    df: pd.DataFrame, count: int, show_curve: bool
+) -> go.Figure | None:
+    if "AGS" not in df:
+        return None
+
+    values = df["AGS"].replace(0, np.nan).dropna().head(count).astype(float)
+
+    if values.empty:
+        return None
+
+    lower = float(values.min())
+    upper = float(values.max())
+
+    figure = go.Figure(
+        go.Histogram(
+            x=values,
+            xbins={
+                "start": lower - 2,
+                "end": upper + 3,
+                "size": 3,
+            },
+            marker={
+                "color": "rgba(100,149,237,0.75)",
+            },
+            showlegend=False,
+            hovertemplate="%{x:.0f} strokes<br>%{y} rounds<extra></extra>",
+        )
+    )
+
+    std = float(values.std(ddof=0))
+
+    if show_curve and std > 0:
+        mean = float(values.mean())
+
+        smooth = np.linspace(lower - 5, upper + 5, 300)
+
+        density = (
+            np.exp(-0.5 * ((smooth - mean) / std) ** 2)
+            / (std * np.sqrt(2 * np.pi))
+            * len(values)
+            * 3
+        )
+
+        figure.add_trace(
+            go.Scatter(
+                x=smooth,
+                y=density,
                 mode="lines",
-                name=f"Gaussian fit · μ {mean:.1f}",
-                line={"color": "#E63946", "dash": "dash"},
+                line={
+                    "color": "#E63946",
+                    "dash": "dash",
+                    "width": 3,
+                },
+                hoverinfo="skip",
+                showlegend=False,
             )
         )
+
+        figure.add_vline(
+            x=mean,
+            line_dash="dash",
+            line_color="#E63946",
+            line_width=2,
+        )
+
+        figure.add_annotation(
+            x=mean,
+            y=0.97,
+            xref="x",
+            yref="paper",
+            text=f"μ = {mean:.1f}",
+            showarrow=False,
+            bgcolor="rgba(255,255,255,0.85)",
+            bordercolor="#E63946",
+            borderwidth=1,
+            font=dict(size=12),
+        )
+
     figure.update_layout(
         title=f"Gross-score distribution · last {count} rounds",
         xaxis_title="Adjusted Gross Score",
         yaxis_title="Frequency",
         height=390,
-        margin={"l": 20, "r": 20, "t": 60, "b": 30},
+        margin=dict(l=20, r=20, t=60, b=30),
         showlegend=False,
+        hovermode="closest",
     )
+
+    figure.update_xaxes(
+        fixedrange=True,
+        dtick=3,
+    )
+
+    figure.update_yaxes(
+        fixedrange=True,
+    )
+
     return figure
