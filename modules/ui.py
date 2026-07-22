@@ -18,10 +18,15 @@ def player_label(df: pd.DataFrame) -> str:
 
 
 def player_overview(df: pd.DataFrame) -> None:
-    player, current, best = st.columns(3)
-    player.metric("Player", player_label(df))
+    st.metric("Player", player_label(df))
+    
+    current, best = st.columns(2)
     current.metric("Current Handicap", f"{current_handicap(df):.1f}")
-    best.metric("Best recorded Handicap", f"{df['Index Nuovo'].min():.1f}")
+    best.metric("Best recorded Handicap", f"{df['Index Nuovo'].min():.1f}")#player, current, best = st.columns(3)
+    
+    #player.metric("Player", player_label(df))
+    #current.metric("Current Handicap", f"{current_handicap(df):.1f}")
+    #best.metric("Best recorded Handicap", f"{df['Index Nuovo'].min():.1f}")
 
 
 def sidebar_footer() -> None:
