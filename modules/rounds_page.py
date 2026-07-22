@@ -124,46 +124,19 @@ def handicap_chart(
     
     return figure
 
-
 def strokes_distribution(
     df: pd.DataFrame, count: int, show_curve: bool
 ) -> go.Figure | None:
     if "AGS" not in df:
         return None
-    values = df["AGS"].replace(0, np.nan).dropna().head(count).astype(float)
-    if values.empty:
-        return None
 
-    lower, upper = float(values.min()), float(values.max())
-    figure = go.Figure(
-        go.Histogram(
-            x=values,
-            xbins={"start": lower - 2, "end": upper + 4, "size": 3},
-            name="Strokes",
-            marker={"color": "rgba(100, 149, 237, 0.7)"},
-        )
+    values = (
+        df["AGS"]
+        .replace(0, np.nan)
+        .dropna()
+        .head(count)
+        .astype(float)
     )
-    standard_deviation = float(values.std(ddof=0))
-    if show_curve and standard_deviation > 0:
-        mean = float(values.mean())
-        smooth = np.linspace(lower - 5, upper + 5, 300)
-        density = (
-            np.exp(-0.5 * ((smooth - mean) / standard_deviation) ** 2)
-            / (standard_deviation * np.sqrt(2 * np.pi))
-            * len(values)
-            * 4
-        )
-        figure.add_trace(
-            go.Scatter(
-                x=smooth,
-                y=density,
-                mode="lines",def strokes_distribution(
-    df: pd.DataFrame, count: int, show_curve: bool
-) -> go.Figure | None:
-    if "AGS" not in df:
-        return None
-
-    values = df["AGS"].replace(0, np.nan).dropna().head(count).astype(float)
 
     if values.empty:
         return None
@@ -179,9 +152,7 @@ def strokes_distribution(
                 "end": upper + 3,
                 "size": 3,
             },
-            marker={
-                "color": "rgba(100,149,237,0.75)",
-            },
+            marker={"color": "rgba(100,149,237,0.75)"},
             showlegend=False,
             hovertemplate="%{x:.0f} strokes<br>%{y} rounds<extra></extra>",
         )
@@ -198,7 +169,7 @@ def strokes_distribution(
             np.exp(-0.5 * ((smooth - mean) / std) ** 2)
             / (std * np.sqrt(2 * np.pi))
             * len(values)
-            * 3
+            * 3  # match histogram bin width
         )
 
         figure.add_trace(
@@ -206,11 +177,11 @@ def strokes_distribution(
                 x=smooth,
                 y=density,
                 mode="lines",
-                line={
-                    "color": "#E63946",
-                    "dash": "dash",
-                    "width": 3,
-                },
+                line=dict(
+                    color="#E63946",
+                    dash="dash",
+                    width=3,
+                ),
                 hoverinfo="skip",
                 showlegend=False,
             )
