@@ -88,41 +88,45 @@ def performance_insights() -> None:
 
     st.title("Performance Insights ⛳️")
     st.caption(
-        "A compact view of form and handicap inputs using your official FederGolf "
-        "result history. Lower Score Differential values are better."
+        "See at a glance how you are playing and which rounds are helping your Handicap."
     )
 
-    current_col, low_col, form_col, consistency_col = st.columns(4)
+    current_col, low_col, form_col = st.columns(3)
     current_col.metric(
         "Current Handicap",
         _format_metric(summary.current_handicap),
     )
     low_col.metric(
-        "Lowest recorded index · 365d",
+        "Best HCP · last 12 months",
         _format_metric(summary.low_index_365),
     )
     form_col.metric(
-        "Average SD · last 5",
+        "Recent form · last 5",
         _format_metric(summary.recent_sd_average),
         delta=_form_delta(summary.form_change),
         delta_color="inverse",
     )
-    consistency_col.metric(
-        "SD consistency · last 20",
-        _format_metric(summary.sd_consistency),
-        help="Population standard deviation. Lower means your recent rounds are more consistent.",
-    )
-
     _show_form_message(summary)
+    with st.expander("What is Score Differential (SD)?"):
+        st.write(
+            "SD compares a round with the difficulty of the course. Lower is better. "
+            "Your Handicap is mainly based on the best 8 SD values from your latest "
+            "20 valid rounds."
+        )
     _show_differential_chart(rounds)
+    _show_counting_rounds(rounds, summary.best_eight_average)
 
-    left, right = st.columns([3, 2])
-    with left:
-        _show_counting_rounds(rounds, summary.best_eight_average)
-    with right:
-        _show_round_signals(df)
-
-    _show_formula_performance(df)
+    with st.expander("Advanced details"):
+        st.metric(
+            "Consistency · last 20",
+            _format_metric(summary.sd_consistency),
+            help="Lower means your recent Score Differentials are more consistent.",
+        )
+        left, right = st.columns(2)
+        with left:
+            _show_round_signals(df)
+        with right:
+            _show_formula_performance(df)
 
 
 def _dated_rounds(df: pd.DataFrame) -> pd.DataFrame:
@@ -213,9 +217,8 @@ def _show_counting_rounds(
     st.subheader("Your counting rounds")
     if best_eight_average is not None:
         st.caption(
-            f"Raw average of the lowest {min(8, len(rounds))} SD values: "
-            f"{best_eight_average:.1f}. FederGolf remains authoritative for the "
-            "official Handicap Index and any safeguards."
+            f"These are the green rounds helping your Handicap now. Their average "
+            f"SD is {best_eight_average:.1f}."
         )
     selected = rounds[rounds["Counting"]].copy()
     if selected.empty:
@@ -232,7 +235,7 @@ def _show_counting_rounds(
 
 
 def _show_round_signals(df: pd.DataFrame) -> None:
-    st.subheader("Round signals")
+    st.subheader("Special round signals")
     exceptional = potential_exceptional_rounds(df)
     pcc_rounds = 0
     if "PCC" in df:
@@ -270,7 +273,7 @@ def _show_formula_performance(df: pd.DataFrame) -> None:
     )
     if by_formula.empty:
         return
-    st.subheader("Performance by competition format")
+    st.subheader("By competition format")
     st.caption("Formats with at least two valid rounds, ranked by average SD.")
     st.dataframe(
         by_formula,
