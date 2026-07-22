@@ -193,18 +193,18 @@ def strokes_distribution(
             line_color="#E63946",
             line_width=2,
         )
-
+        
         figure.add_annotation(
             x=mean,
-            y=0.97,
-            xref="x",
-            yref="paper",
+            y=max(density) * 0.9,
             text=f"μ = {mean:.1f}",
-            showarrow=False,
+            showarrow=True,
+            arrowhead=2,
+            ax=35,
+            ay=-25,
             bgcolor="rgba(255,255,255,0.85)",
             bordercolor="#E63946",
-            borderwidth=1,
-            font=dict(size=12),
+            font=dict(color="#E63946", size=12),
         )
 
     figure.update_layout(
