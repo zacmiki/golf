@@ -143,7 +143,7 @@ def strokes_distribution(
     figure = go.Figure(
         go.Histogram(
             x=values,
-            xbins={"start": lower - 2, "end": upper + 4, "size": 4},
+            xbins={"start": lower - 2, "end": upper + 4, "size": 3},
             name="Strokes",
             marker={"color": "rgba(100, 149, 237, 0.7)"},
         )
