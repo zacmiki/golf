@@ -207,6 +207,7 @@ def _show_differential_chart(rounds: pd.DataFrame) -> None:
         hovermode="x unified",
         height=430,
         margin={"l": 20, "r": 20, "t": 60, "b": 30},
+        showlegend=False
     )
     st.plotly_chart(figure, width="stretch")
 
